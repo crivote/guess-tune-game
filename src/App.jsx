@@ -5,15 +5,24 @@ import GameModeTitleToTune from './components/GameModeTitleToTune';
 import DifficultySelector from './components/DifficultySelector';
 import HistoryList from './components/HistoryList';
 import SettingsPopup from './components/SettingsPopup';
+import LoginPopup from './components/LoginPopup';
+import DataRecoveryPopup from './components/DataRecoveryPopup';
 import GameSummary from './components/GameSummary';
 import { createSignal, Show } from 'solid-js';
 
 function App() {
-    const { gameState, startNewGame, startGame, loadTunes, setGameState, gameMode, userName, backToMenu, isStarting } = useGameStore();
+    const { gameState, startNewGame, startGame, loadTunes, setGameState, gameMode, userName, backToMenu, isStarting, isLoggedIn, logout, hasSavedData, persistentLogin } = useGameStore();
     const [showSettings, setShowSettings] = createSignal(false);
+    const [showLogin, setShowLogin] = createSignal(false);
+    const [showRecovery, setShowRecovery] = createSignal(false);
 
     onMount(async () => {
         await loadTunes();
+        // Show recovery popup if data exists, but we aren't auto-logged in 
+        // and user hasn't specifically said "don't ask again" (persistentLogin === 'false')
+        if (hasSavedData() && !isLoggedIn() && persistentLogin() !== 'false') {
+            setShowRecovery(true);
+        }
     });
 
     return (
@@ -30,15 +39,29 @@ function App() {
                             </div>
                             <h1 class="text-2xl font-bold tracking-tight text-dark-sepia-ink">TradTune Guesser</h1>
                         </div>
-                        <Show when={gameState() === 'playing' || gameState() === 'answered'}>
-                            <button
-                                onClick={backToMenu}
-                                class="flex items-center gap-2 text-accent-sepia hover:text-dark-sepia-ink font-bold transition-all"
-                            >
-                                <span class="material-symbols-outlined">menu</span>
-                                <span class="hidden sm:inline">Menu</span>
-                            </button>
-                        </Show>
+                        <div class="flex items-center gap-4">
+                            <Show when={isLoggedIn()}>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold text-accent-sepia/70">@{userName()}</span>
+                                    <button
+                                        onClick={logout}
+                                        class="material-symbols-outlined text-accent-sepia hover:text-red-500 transition-colors cursor-pointer"
+                                        title="Logout"
+                                    >
+                                        logout
+                                    </button>
+                                </div>
+                            </Show>
+                            <Show when={gameState() === 'playing' || gameState() === 'answered' || gameState() === 'summary'}>
+                                <button
+                                    onClick={backToMenu}
+                                    class="flex items-center gap-2 text-accent-sepia hover:text-dark-sepia-ink font-bold transition-all"
+                                >
+                                    <span class="material-symbols-outlined">menu</span>
+                                    <span class="hidden sm:inline">Menu</span>
+                                </button>
+                            </Show>
+                        </div>
                     </div>
                 </div>
             </header>
@@ -49,26 +72,59 @@ function App() {
                         <div class="max-w-4xl w-full flex flex-col items-center py-6">
                             <div class="flex flex-col items-center text-center mb-10 max-w-2xl">
                                 <h2 class="text-4xl font-black text-dark-sepia-ink mb-3 capitalize">
-                                    Welcome, {userName()}!
+                                    {isLoggedIn() ? `Fáilte, ${userName()}!` : 'Welcome!'}
                                 </h2>
                                 <p class="text-lg text-text-charcoal/70 leading-relaxed font-medium">
-                                    TradTune Guesser is a challenge for your ears and your memory.
+                                    <strong class="text-dark-sepia-ink">TradTune Guesser</strong> is a challenge for your ears and your memory.
                                     Listen to the melodies and identify the tunes from the rich tradition of Irish music.
+                                    Unlock more advanced levels and show your skills!
                                 </p>
+
+                                <Show when={!isLoggedIn()}>
+                                    <div class="mt-8 relative group">
+                                        <button
+                                            onClick={() => setShowLogin(true)}
+                                            class="bg-primary hover:bg-primary/90 text-dark-sepia-ink px-8 py-3 rounded-xl font-bold transition-all transform hover:scale-105 active:scale-95 shadow-md flex items-center gap-2"
+                                        >
+                                            <span class="material-symbols-outlined">login</span>
+                                            Login to Save Progress
+                                        </button>
+
+                                        <div class="absolute top-full mt-3 left-1/2 -translate-x-1/2 w-64 p-3 bg-dark-sepia-ink text-white text-[11px] rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 shadow-xl border border-white/10">
+                                            <p class="font-bold text-primary mb-1">Why login?</p>
+                                            <ul class="space-y-1 text-white/80">
+                                                <li>• Save your high scores</li>
+                                                <li>• Unlock higher difficulty levels</li>
+                                                <li>• Keep your session history</li>
+                                            </ul>
+                                            <div class="absolute -top-1 left-1/2 -translate-x-1/2 border-l-4 border-l-transparent border-r-4 border-r-transparent border-b-4 border-b-dark-sepia-ink"></div>
+                                        </div>
+                                    </div>
+                                </Show>
                             </div>
 
+                            <div class="text-center mb-6">
+                                <h2 class="text-2xl font-black text-dark-sepia-ink mb-1">Select Level</h2>
+                            </div>
                             <DifficultySelector onOpenSettings={() => setShowSettings(true)} />
 
                             <Show when={showSettings()}>
                                 <SettingsPopup onClose={() => setShowSettings(false)} />
                             </Show>
 
+                            <Show when={showLogin()}>
+                                <LoginPopup onClose={() => setShowLogin(false)} />
+                            </Show>
+
+                            <Show when={showRecovery()}>
+                                <DataRecoveryPopup onClose={() => setShowRecovery(false)} />
+                            </Show>
+
                             <div class="text-center mb-6">
-                                <h2 class="text-3xl font-black text-dark-sepia-ink mb-1">Modes</h2>
-                                <p class="text-text-charcoal/60 text-sm">Choose your path</p>
+                                <h2 class="text-2xl font-black text-dark-sepia-ink mb-1">Choose a Game Mode</h2>
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl mb-12">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl mb-12">
                                 <button
                                     onClick={() => startNewGame('tune-to-title')}
                                     class="group relative bg-surface-sepia p-6 rounded-2xl border-2 border-accent-sepia/20 hover:border-primary transition-all text-left shadow-sm hover:shadow-xl active:scale-[0.98]"
@@ -81,13 +137,14 @@ function App() {
                                 </button>
 
                                 <button
+                                    disabled={true}
                                     onClick={() => startNewGame('title-to-tune')}
-                                    class="group relative bg-surface-sepia p-6 rounded-2xl border-2 border-accent-sepia/20 hover:border-primary transition-all text-left shadow-sm hover:shadow-xl active:scale-[0.98]"
+                                    class="cursor-not-allowed group relative bg-surface-sepia p-6 rounded-2xl border-2 border-accent-sepia/20 hover:border-primary transition-all text-left shadow-sm hover:shadow-xl active:scale-[0.98]"
                                 >
                                     <div class="size-14 rounded-xl bg-accent-sepia/20 text-accent-sepia flex items-center justify-center mb-4 group-hover:bg-accent-sepia group-hover:text-white transition-colors">
                                         <span class="material-symbols-outlined text-3xl">menu_book</span>
                                     </div>
-                                    <h3 class="text-xl font-bold text-dark-sepia-ink mb-1">Title to Tune</h3>
+                                    <h3 class="text-xl font-bold text-dark-sepia-ink mb-1">Title to Tune <span class="text-text-charcoal/60 text-sm">SOON AVAILABLE</span></h3>
                                     <p class="text-text-charcoal/60 text-sm">Given a name, pick the correct melody from audio choices.</p>
                                 </button>
                             </div>
@@ -134,6 +191,27 @@ function App() {
                     </Match>
                 </Switch>
             </main>
+
+            <footer class="w-full border-t border-accent-sepia/20 bg-surface-sepia/50 backdrop-blur-sm py-6 mt-auto">
+                <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="text-center text-sm text-text-charcoal/60">
+                        <p class="flex items-center justify-center gap-1 flex-wrap">
+                            Made with
+                            <span class="text-red-500 inline-block animate-pulse">❤️</span>
+                            by <span class="font-semibold text-dark-sepia-ink">Victor Gomez</span>
+                        </p>
+                        <p class="mt-2 text-xs text-text-charcoal/50">
+                            With the help of{' '}
+                            <a href="https://stitch.google.com" target="_blank" rel="noopener noreferrer" class="hover:text-primary transition-colors">Google Stitch</a>,{' '}
+                            <a href="https://thesession.org" target="_blank" rel="noopener noreferrer" class="hover:text-primary transition-colors">TheSession.org</a>,{' '}
+                            <a href="https://abcjs.net" target="_blank" rel="noopener noreferrer" class="hover:text-primary transition-colors">ABCjs</a>,{' '}
+                            <a href="https://www.solidjs.com" target="_blank" rel="noopener noreferrer" class="hover:text-primary transition-colors">SolidJS</a>{' '}
+                            and{' '}
+                            <a href="https://tailwindcss.com" target="_blank" rel="noopener noreferrer" class="hover:text-primary transition-colors">Tailwind CSS</a>
+                        </p>
+                    </div>
+                </div>
+            </footer>
         </div>
     );
 }

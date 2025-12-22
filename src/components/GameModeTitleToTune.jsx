@@ -17,11 +17,16 @@ function GameModeTitleToTune() {
 
     onMount(() => {
         timerInterval = setInterval(() => {
-            if (gameState() === 'playing' && settings().timeLimit > 0) {
-                if (timer() > 0) {
-                    setTimer(t => Math.max(0, t - 1));
+            if (gameState() === 'playing') {
+                if (settings().timeLimit > 0) {
+                    if (timer() > 0) {
+                        setTimer(t => Math.max(0, t - 1));
+                    } else {
+                        submitAnswer(null); // Time out only if limit > 0
+                    }
                 } else {
-                    submitAnswer(null); // Time out only if limit > 0
+                    // Count up for difficulties with no limit (to measure speed)
+                    setTimer(t => t + 1);
                 }
             }
         }, 1000);
@@ -62,16 +67,14 @@ function GameModeTitleToTune() {
                         <span class="text-[10px] uppercase font-bold opacity-90">Round</span>
                         <span class="font-mono text-xl font-black">{round()}/{settings().roundsCount}</span>
                     </div>
-                    <Show when={settings().timeLimit > 0}>
-                        <div class="w-px h-10 bg-background-parchment/30"></div>
-                        <div class="flex flex-col items-center">
-                            <span class="material-symbols-outlined text-[24px] mb-1">timer</span>
-                            <span class="text-[10px] uppercase font-bold opacity-90">Time</span>
-                            <span class="font-mono text-xl font-black">
-                                {Math.floor(timer() / 60)}:{(timer() % 60).toString().padStart(2, '0')}
-                            </span>
-                        </div>
-                    </Show>
+                    <div class="w-px h-10 bg-background-parchment/30"></div>
+                    <div class="flex flex-col items-center">
+                        <span class="material-symbols-outlined text-[24px] mb-1">timer</span>
+                        <span class="text-[10px] uppercase font-bold opacity-90">{settings().timeLimit > 0 ? 'Time Left' : 'Time'}</span>
+                        <span class="font-mono text-xl font-black">
+                            {Math.floor(timer() / 60)}:{(timer() % 60).toString().padStart(2, '0')}
+                        </span>
+                    </div>
                     <div class="w-px h-10 bg-background-parchment/30"></div>
                     <div class="flex flex-col items-center">
                         <span class="material-symbols-outlined text-orange-200 text-[24px] mb-1">local_fire_department</span>
@@ -99,7 +102,7 @@ function GameModeTitleToTune() {
                         const isFailed = () => failedOptionIds().includes(tune.id);
                         return (
                             <div class={`answer-card opacity-0 bg-background-parchment rounded-xl p-4 border-2 transition-all ${gameState() === 'answered'
-                                ? tune.id === currentTune().id
+                                ? tune.id === currentTune()?.id
                                     ? 'border-green-500 bg-green-50'
                                     : 'border-accent-sepia/5 opacity-60'
                                 : isFailed()
@@ -123,7 +126,7 @@ function GameModeTitleToTune() {
                                         onClick={() => submitAnswer(tune.id)}
                                         disabled={gameState() === 'answered' || isFailed()}
                                         class={`h-14 px-6 rounded-lg font-bold transition-all active:scale-95 ${gameState() === 'answered'
-                                            ? tune.id === currentTune().id
+                                            ? tune.id === currentTune()?.id
                                                 ? 'bg-green-600 text-white'
                                                 : 'bg-surface-sepia/50 text-text-charcoal/40'
                                             : isFailed()
@@ -132,7 +135,7 @@ function GameModeTitleToTune() {
                                             }`}
                                     >
                                         {gameState() === 'answered'
-                                            ? tune.id === currentTune().id ? 'Correct' : 'Option ' + (index() + 1)
+                                            ? tune.id === currentTune()?.id ? 'Correct' : 'Option ' + (index() + 1)
                                             : isFailed() ? 'Failed' : 'Choose This'}
                                     </button>
                                 </div>

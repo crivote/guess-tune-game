@@ -1,10 +1,14 @@
 import { Show, onMount, onCleanup, createSignal } from 'solid-js';
 import { animate } from "motion";
+import { useGameStore } from '../store/gameStore';
 
 export default function FeedbackPopup(props) {
     // props: result { correct, points, name, type, key, ... }, onNext
-    const [timeLeft, setTimeLeft] = createSignal(5);
+    const { round, settings } = useGameStore();
+    const [timeLeft, setTimeLeft] = createSignal(10);
     let timer;
+
+    const isLastRound = () => round() === settings().roundsCount;
 
     onMount(() => {
         // Animation sequence using delays instead of timeline
@@ -52,7 +56,7 @@ export default function FeedbackPopup(props) {
                 <div class="absolute top-0 left-0 w-full h-1 bg-white/10">
                     <div
                         class="h-full bg-primary transition-all duration-1000 ease-linear"
-                        style={{ width: `${(timeLeft() / 5) * 100}%` }}
+                        style={{ width: `${(timeLeft() / 10) * 100}%` }}
                     ></div>
                 </div>
 
@@ -86,25 +90,26 @@ export default function FeedbackPopup(props) {
                         {props.result.name}
                     </p>
                     <p class="text-white/40 text-sm mt-1 mb-3">
-                        {props.result.key || 'N/A'}
+                        <span class="text-sm font-bold text-background-parchment capitalize">{props.result.type}</span> {props.result.key ? `- Key: ${props.result.key}` : ''}
                     </p>
 
-                    <div class="flex items-center gap-3 mt-2 pt-3 border-t border-white/10">
+                    <div class="flex flex-wrap items-center justify-around gap-4 mt-2 pt-3 border-t border-white/10">
                         <div class="flex flex-col">
-                            <span class="text-[9px] text-accent-sepia font-bold uppercase tracking-wider">Rhythm</span>
-                            <span class="text-sm font-medium text-background-parchment capitalize">{props.result.type}</span>
+                            <span class="text-[9px] text-accent-sepia font-bold uppercase tracking-wider">Time</span>
+                            <span class="text-sm font-medium text-background-parchment">{props.result.timeTaken}s</span>
                         </div>
                         <div class="w-px h-6 bg-white/10"></div>
                         <div class="flex flex-col">
-                            <span class="text-[9px] text-accent-sepia font-bold uppercase tracking-wider">Popularity</span>
-                            <span class="text-sm font-medium text-background-parchment">#{props.result.rank}</span>
+                            <span class="text-[9px] text-accent-sepia font-bold uppercase tracking-wider">Speed</span>
+                            <span class={`text-sm font-black ${props.result.speedBonus > 0 ? 'text-primary' : 'text-white/40'}`}>
+                                +{props.result.speedBonus}%
+                            </span>
                         </div>
-                        <Show when={props.result.bonus > 0}>
-                            <div class="ml-auto flex flex-col items-end animate-in zoom-in slide-in-from-bottom-2 duration-300">
-                                <span class="text-[9px] text-orange-300 font-bold uppercase tracking-wider">Streak Bonus</span>
-                                <span class="text-sm font-black text-orange-400">+{props.result.bonus}</span>
-                            </div>
-                        </Show>
+                        <div class="w-px h-6 bg-white/10"></div>
+                        <div class="flex flex-col">
+                            <span class="text-[9px] text-accent-sepia font-bold uppercase tracking-wider">Streak</span>
+                            <span class="text-sm font-black text-orange-400">+{props.result.bonus}</span>
+                        </div>
                     </div>
                 </div>
 
@@ -112,9 +117,9 @@ export default function FeedbackPopup(props) {
                     onClick={() => props.onNext()}
                     class="w-full bg-primary hover:bg-primary/90 text-dark-sepia-ink font-bold text-lg py-4 rounded-xl shadow-[0_4px_14px_0_rgba(214,163,80,0.39)] transition-all hover:scale-[1.02] active:scale-[0.98] relative z-10 flex items-center justify-center gap-2"
                 >
-                    <span>Next Round ({timeLeft()}s)</span>
+                    <span>{isLastRound() ? 'Finish Game' : 'Next Round'} ({timeLeft()}s)</span>
                     <span class="material-symbols-outlined">
-                        {props.result.correct ? 'arrow_forward' : 'replay'}
+                        {isLastRound() ? 'celebration' : (props.result.correct ? 'arrow_forward' : 'replay')}
                     </span>
                 </button>
             </div>

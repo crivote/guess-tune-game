@@ -29,6 +29,8 @@ function AudioPlayer(props) {
     let synthControl;
     let visualObj;
 
+    const instanceId = Math.random().toString(36).substring(7);
+
     onCleanup(() => {
         if (synthControl) {
             synthControl.pause();
@@ -41,7 +43,7 @@ function AudioPlayer(props) {
         synthControl = new abcjs.synth.SynthController();
         // Load into the DOM element normally
         // We render controls here intentionally now
-        synthControl.load('#audio-player', null, {
+        synthControl.load(`#audio-player-${instanceId}`, null, {
             displayLoop: false,
             displayRestart: false,
             displayPlay: true,
@@ -57,7 +59,7 @@ function AudioPlayer(props) {
         console.log("AudioPlayer effect triggered. New ABC received.");
 
         // Clear previous visual content explicitly
-        const container = document.getElementById('abc-music-container');
+        const container = document.getElementById(`abc-music-container-${instanceId}`);
         if (container) container.innerHTML = '';
 
         // Stop any current playback immediately
@@ -138,14 +140,14 @@ function AudioPlayer(props) {
         <div class="w-full flex flex-col items-center gap-4">
             {/* Controls area - Visible */}
             <div
-                id="audio-player"
+                id={`audio-player-${instanceId}`}
                 class="w-full max-w-md bg-white/10 rounded-lg p-2"
                 style={{ "min-height": "40px" }}
             ></div>
 
             {/* Sheet music - Hidden but rendered in DOM for internal calculations */}
             <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', visibility: 'hidden' }}>
-                <div id="abc-music-container"></div>
+                <div id={`abc-music-container-${instanceId}`}></div>
             </div>
         </div>
     );

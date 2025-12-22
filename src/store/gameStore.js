@@ -1,4 +1,4 @@
-import { createSignal, createMemo } from 'solid-js';
+import { createSignal, createMemo, createEffect } from 'solid-js';
 import { soundManager } from '../utils/SoundManager';
 
 const [tunes, setTunes] = createSignal([]);
@@ -19,37 +19,68 @@ const [showWrongTryPopup, setShowWrongTryPopup] = createSignal(false);
 const [isMusicPlaying, setIsMusicPlaying] = createSignal(false);
 const [isStarting, setIsStarting] = createSignal(false);
 const [gamePool, setGamePool] = createSignal([]); // Pre-filtered pool for the current game
+const [sessionResults, setSessionResults] = createSignal([]); // All rounds results for the current session
 
-const [userName, setUserName] = createSignal(localStorage.getItem('userName') || 'Player');
-const initialHistory = JSON.parse(localStorage.getItem('gameHistory')) || { EASY: [], MEDIUM: [], HARD: [], CUSTOM: [] };
-// Legacy migration: if history is array, reset it or migrate (resetting for simplicity as structure changed)
-const [history, setHistory] = createSignal(Array.isArray(initialHistory) ? { EASY: [], MEDIUM: [], HARD: [], CUSTOM: [] } : initialHistory);
+// Login state management
+const [persistentLogin, setPersistentLogin] = createSignal(localStorage.getItem('persistentLogin')); // 'true', 'false', or null
+const [hasConsent, setHasConsent] = createSignal(localStorage.getItem('persistentLogin') === 'true' && localStorage.getItem('hasConsent') === 'true');
+const [userName, setUserName] = createSignal(localStorage.getItem('persistentLogin') === 'true' ? (localStorage.getItem('userName') || '') : '');
+const isLoggedIn = () => userName() !== '' && hasConsent();
+
+const hasSavedData = () => {
+    return localStorage.getItem('userName') !== null && localStorage.getItem('hasConsent') === 'true';
+};
+
+const initialHistory = JSON.parse(localStorage.getItem('gameHistory')) || { BEGINNER: [], BASIC: [], MEDIUM: [], HARD: [], CUSTOM: [] };
+// Legacy migration: migrate EASY to BEGINNER if exists
+if (initialHistory.EASY && !initialHistory.BEGINNER) {
+    initialHistory.BEGINNER = initialHistory.EASY;
+    delete initialHistory.EASY;
+}
+const [history, setHistory] = createSignal(Array.isArray(initialHistory) ? { BEGINNER: [], BASIC: [], MEDIUM: [], HARD: [], CUSTOM: [] } : initialHistory);
 const [highScore, setHighScore] = createSignal(JSON.parse(localStorage.getItem('highScore')) || { score: 0, date: null });
 
 const [audioContext, setAudioContext] = createSignal(null);
 
 export const DIFFICULTIES = {
-    EASY: {
-        id: 'EASY',
-        name: 'Easy',
+    BEGINNER: {
+        id: 'BEGINNER',
+        name: 'Beginner',
         numOptions: 3,
         maxTries: 2,
         roundsCount: 10,
         timeLimit: 0, // No limit
         penalty: 0,
         maxSkips: 2,
-        poolFilters: { type: 'all', minTunebooks: 0, topN: 200 }
+        poolFilters: { type: 'all', minTunebooks: 0, topN: 100 },
+        maxPossibleScore: 1000,
+        unlockRequirement: 0 // Always unlocked
+    },
+    BASIC: {
+        id: 'BASIC',
+        name: 'Basic',
+        numOptions: 4,
+        maxTries: 2,
+        roundsCount: 20,
+        timeLimit: 60,
+        penalty: -10,
+        maxSkips: 1,
+        poolFilters: { type: 'all', minTunebooks: 0, topN: 250 },
+        maxPossibleScore: 3500,
+        unlockRequirement: 750
     },
     MEDIUM: {
         id: 'MEDIUM',
         name: 'Medium',
-        numOptions: 4,
+        numOptions: 5,
         maxTries: 1,
-        roundsCount: 20,
-        timeLimit: 30,
+        roundsCount: 30,
+        timeLimit: 40,
         penalty: -25,
-        maxSkips: 1,
-        poolFilters: { type: 'all', minTunebooks: 0, topN: 500 }
+        maxSkips: 0,
+        poolFilters: { type: 'all', minTunebooks: 0, topN: 500 },
+        maxPossibleScore: 12000,
+        unlockRequirement: 2500
     },
     HARD: {
         id: 'HARD',
@@ -57,10 +88,12 @@ export const DIFFICULTIES = {
         numOptions: 6,
         maxTries: 1,
         roundsCount: 40,
-        timeLimit: 15,
+        timeLimit: 30,
         penalty: -50,
         maxSkips: 0,
-        poolFilters: { type: 'all', minTunebooks: 0 }
+        poolFilters: { type: 'all', minTunebooks: 0, topN: 1000 },
+        maxPossibleScore: 40000,
+        unlockRequirement: 9000
     },
     CUSTOM: {
         id: 'CUSTOM',
@@ -71,14 +104,57 @@ export const DIFFICULTIES = {
         timeLimit: 30,
         penalty: -10,
         maxSkips: 3,
-        poolFilters: { type: 'all', minTunebooks: 0 }
+        poolFilters: { type: 'all', minTunebooks: 0 },
+        maxPossibleScore: 0,
+        unlockRequirement: 0
     }
 };
 
-const [settings, setSettings] = createSignal(JSON.parse(localStorage.getItem('gameSettings')) || DIFFICULTIES.MEDIUM);
+const [settings, setSettings] = createSignal(JSON.parse(localStorage.getItem('gameSettings')) || DIFFICULTIES.BEGINNER);
 
 const [triesLeft, setTriesLeft] = createSignal(1);
 const [currentPoolSize, setCurrentPoolSize] = createSignal(0);
+
+// Difficulty unlock helpers
+const DIFFICULTY_ORDER = ['BEGINNER', 'BASIC', 'MEDIUM', 'HARD'];
+
+function getPreviousDifficulty(difficultyId) {
+    const index = DIFFICULTY_ORDER.indexOf(difficultyId);
+    return index > 0 ? DIFFICULTY_ORDER[index - 1] : null;
+}
+
+function getBestScoreForDifficulty(difficultyId, historyData) {
+    const diffHistory = historyData[difficultyId] || [];
+    if (diffHistory.length === 0) return 0;
+    return Math.max(...diffHistory.map(h => h.score));
+}
+
+function isDifficultyUnlocked(difficultyId, historyData) {
+    const difficulty = DIFFICULTIES[difficultyId];
+    if (!difficulty || difficulty.unlockRequirement === 0) return true;
+
+    // Gate by login: only Beginner (always unlocked) is available for anonymous users
+    if (!isLoggedIn()) return false;
+
+    const prevDiffId = getPreviousDifficulty(difficultyId);
+    if (!prevDiffId) return true;
+
+    const bestScore = getBestScoreForDifficulty(prevDiffId, historyData);
+    return bestScore >= difficulty.unlockRequirement;
+}
+
+function getUnlockProgress(difficultyId, historyData) {
+    const difficulty = DIFFICULTIES[difficultyId];
+    if (!difficulty || difficulty.unlockRequirement === 0) return 100;
+
+    const prevDiffId = getPreviousDifficulty(difficultyId);
+    if (!prevDiffId) return 100;
+
+    const bestScore = getBestScoreForDifficulty(prevDiffId, historyData);
+    const progress = (bestScore / difficulty.unlockRequirement) * 100;
+    return Math.min(progress, 100);
+}
+
 
 export function useGameStore() {
     const saveToLocal = (key, value) => localStorage.setItem(key, JSON.stringify(value));
@@ -93,7 +169,8 @@ export function useGameStore() {
 
     const loadTunes = async () => {
         try {
-            const response = await fetch('/tunes.json');
+            // Use BASE_URL to support GitHub Pages deployment
+            const response = await fetch(`${import.meta.env.BASE_URL}tunes.json`);
             const data = await response.json();
             // Calculate rank based on popularity (tunebooks)
             const sortedData = [...data].sort((a, b) => (b.tunebooks || 0) - (a.tunebooks || 0));
@@ -116,6 +193,7 @@ export function useGameStore() {
         setGuessedTuneIds([]);
         setTriesLeft(settings().maxTries);
         setSkipsLeft(settings().maxSkips || 0);
+        setSessionResults([]);
         setGameState('ready'); // Go to ready screen first to init audio
         setFailedOptionIds([]);
         setShowWrongTryPopup(false);
@@ -195,6 +273,8 @@ export function useGameStore() {
         if (!isFirstRound) {
             if (round() >= settings().roundsCount) {
                 saveGameResult();
+                setIsMusicPlaying(false);
+                setCurrentTune(null); // Force cleanup of AudioPlayer
                 setGameState('summary');
                 soundManager.playGameOver();
                 return;
@@ -244,13 +324,23 @@ export function useGameStore() {
         const correct = selectedTuneId === currentTune().id;
         if (correct) {
             // Dynamic Scoring Logic
-            const base = 100;
+            const base = 350; // Adjusted for Beginner ~1000 target
             const optionWeight = settings().numOptions / 4;
             const poolWeight = Math.max(0.2, Math.min(1.5, currentPoolSize() / 1000));
-            // Fix NaN: Only apply time weight if there is a limit > 0
-            const timeWeight = settings().timeLimit > 0 ? (1 + (timer() / settings().timeLimit)) : 1;
-            const tryBonus = settings().maxTries > 1 ? (triesLeft() / settings().maxTries) : 1;
 
+            // Timing Factor: variable bonus for quick answers
+            let timeWeight = 1;
+            if (settings().timeLimit > 0) {
+                // With limit: linear from 2x (instant) to 1x (timeout)
+                timeWeight = 1 + (timer() / settings().timeLimit);
+            } else {
+                // Without limit (Beginner): bonus for answering under 5s
+                // Linear from 2x (instant) to 1x (5s or more)
+                const speedBonus = Math.max(0, 1 - (timer() / 5));
+                timeWeight = 1 + speedBonus;
+            }
+
+            const tryBonus = settings().maxTries > 1 ? (triesLeft() / settings().maxTries) : 1;
 
             const roundScore = Math.round(base * optionWeight * poolWeight * timeWeight * tryBonus);
 
@@ -261,14 +351,25 @@ export function useGameStore() {
                 setMaxStreak(newStreak);
             }
 
-            // Streak Bonus: +15 points for every 3 streak
-            const streakBonus = Math.floor(newStreak / 3) * 15;
+            // Streak Bonus: starts at 5% of round score, each new guess adds 10% of current bonus
+            // Formula: Multiplier = 0.5 * (1.1^newStreak - 1)
+            const streakMultiplier = 0.5 * (Math.pow(1.1, newStreak) - 1);
+            const streakBonus = Math.round(roundScore * streakMultiplier);
 
             const totalRoundScore = roundScore + streakBonus;
 
             setScore(s => s + totalRoundScore);
             setGuessedTuneIds(prev => [...prev, currentTune().id]);
-            setLastResult({ correct: true, points: totalRoundScore, bonus: streakBonus, ...currentTune() });
+            const result = {
+                correct: true,
+                points: totalRoundScore,
+                bonus: streakBonus,
+                timeTaken: settings().timeLimit > 0 ? (settings().timeLimit - timer()) : timer(),
+                speedBonus: Math.round((timeWeight - 1) * 100),
+                ...currentTune()
+            };
+            setLastResult(result);
+            setSessionResults(prev => [...prev, result]);
             setGameState('answered');
             setIsMusicPlaying(false);
             soundManager.playCorrect();
@@ -277,12 +378,20 @@ export function useGameStore() {
             setTriesLeft(t => t - 1);
             if (triesLeft() <= 0) {
                 setStreak(0);
-                setLastResult({ correct: false, points: 0, ...currentTune() });
+                const result = {
+                    correct: false,
+                    points: 0,
+                    timeTaken: settings().timeLimit > 0 ? (settings().timeLimit - timer()) : timer(),
+                    ...currentTune()
+                };
+                setLastResult(result);
+                setSessionResults(prev => [...prev, result]);
                 setGameState('answered');
                 setIsMusicPlaying(false);
                 soundManager.playWrongFail();
             } else {
                 setFailedOptionIds(prev => [...prev, selectedTuneId]);
+                setStreak(0); // Lose streak on ANY miss
                 setShowWrongTryPopup(true);
                 soundManager.playWrongRetry();
             }
@@ -306,6 +415,9 @@ export function useGameStore() {
     };
 
     const saveGameResult = () => {
+        // Gate by login: don't save results if not logged in
+        if (!isLoggedIn()) return;
+
         const currentResult = {
             id: Date.now(), // Unique ID for deduplication
             score: score(),
@@ -348,9 +460,9 @@ export function useGameStore() {
         localStorage.removeItem('gameHistory');
         localStorage.removeItem('highScore');
         localStorage.removeItem('gameSettings');
-        setHistory({ EASY: [], MEDIUM: [], HARD: [], CUSTOM: [] });
+        setHistory({ BEGINNER: [], BASIC: [], MEDIUM: [], HARD: [], CUSTOM: [] });
         setHighScore({ score: 0, date: null });
-        setSettings(DIFFICULTIES.MEDIUM);
+        setSettings(DIFFICULTIES.BEGINNER);
         window.location.reload(); // Cleanest way to reset everything
     };
 
@@ -360,9 +472,61 @@ export function useGameStore() {
         saveToLocal('gameSettings', updated);
     };
 
-    const updateUserName = (name) => {
+    // Enforce valid settings: Beginner for unlogged, or if locked for logged
+    createEffect(() => {
+        const currentId = settings().id;
+        const loggedIn = isLoggedIn();
+        const unlocked = isDifficultyUnlocked(currentId, history());
+
+        if (!loggedIn) {
+            if (currentId !== 'BEGINNER') {
+                applyPreset('BEGINNER');
+            }
+        } else if (!unlocked) {
+            applyPreset('BEGINNER');
+        }
+    });
+
+    const updateUserName = (name, consentGiven = false) => {
         setUserName(name);
+        setHasConsent(consentGiven);
         localStorage.setItem('userName', name);
+        localStorage.setItem('hasConsent', consentGiven ? 'true' : 'false');
+        // By default, manual login doesn't force persistentLogin unless we add it to the UI later
+        // But for now, let's assume they might want to persist if they explicitly login
+        localStorage.setItem('persistentLogin', 'true');
+        setPersistentLogin('true');
+    };
+
+    const loginWithSavedData = (persist) => {
+        const savedName = localStorage.getItem('userName');
+        const savedConsent = localStorage.getItem('hasConsent') === 'true';
+        if (savedName && savedConsent) {
+            setUserName(savedName);
+            setHasConsent(savedConsent);
+            if (persist) {
+                localStorage.setItem('persistentLogin', 'true');
+                setPersistentLogin('true');
+            }
+        }
+    };
+
+    const skipDataRecovery = (persist) => {
+        if (persist) {
+            localStorage.setItem('persistentLogin', 'false');
+            setPersistentLogin('false');
+        }
+    };
+
+    const logout = () => {
+        if (confirm('Are you sure you want to logout? All progress is stored locally and will be kept on this device, but you will return to anonymous mode.')) {
+            setUserName('');
+            setHasConsent(false);
+            setPersistentLogin('false');
+            localStorage.removeItem('userName');
+            localStorage.removeItem('hasConsent');
+            localStorage.removeItem('persistentLogin');
+        }
     };
 
     return {
@@ -378,6 +542,7 @@ export function useGameStore() {
         gameMode,
         gameState,
         lastResult,
+        sessionResults,
         settings,
         history,
         highScore,
@@ -404,7 +569,15 @@ export function useGameStore() {
         startGame,
         audioContext,
         isStarting,
-        resetData
+        resetData,
+        isLoggedIn,
+        logout,
+        persistentLogin,
+        hasSavedData,
+        loginWithSavedData,
+        skipDataRecovery,
+        isDifficultyUnlocked: (diffId) => isDifficultyUnlocked(diffId, history()),
+        getUnlockProgress: (diffId) => getUnlockProgress(diffId, history())
     };
 }
 
