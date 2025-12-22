@@ -1,0 +1,83 @@
+[
+    {
+        "id": 27,
+        "name": "Drowsy Maggie",
+        "type": "reel",
+        "abc": "|:E2BE dEBE|E2BE AFDF|E2BE dEBE|BABc dAFD:|! d2fd c2ec|defg afge|d2fd c2ec|BABc dAFA|! d2fd c2ec|defg afge|afge fdec|BABc dAFD|",
+        "key": "Edorian",
+        "tunebooks": 7526,
+        "aliases": [
+            "Maggie Tuirseach",
+            "Maggie's Drowsy"
+        ]
+    },
+    {
+        "id": 55,
+        "name": "The Kesh",
+        "type": "jig",
+        "abc": "|:G3 GAB|A3 ABd|edd gdd|edB dBA|! GAG GAB|ABA ABd|edd gdd|BAF G3:|! |:B2B d2d|ege dBA|B2B dBG|ABA AGA|! BAB d^cd|ege dBd|gfg aga|bgg g3:|",
+        "key": "Gmajor",
+        "tunebooks": 7217,
+        "aliases": [
+            "Castle",
+            "The Cheese String",
+            "Conrad's Lament",
+            "Conrad's Trip To The Bog",
+            "Kerrigan's",
+            "The Kesh Mountain",
+            "The Kincora",
+            "The Mountaineers' March"
+        ]
+    },
+    {
+        "id": 1,
+        "name": "Cooley's",
+        "type": "reel",
+        "abc": "|:D2|EBBA B2 EB|B2 AB dBAG|FDAD BDAD|FDAD dAFD|! EBBA B2 EB|B2 AB defg|afec dBAF|DEFD E2:|! |:gf|eB B2 efge|eB B2 gedB|A2 FA DAFA|A2 FA defg|! eB B2 eBgB|eB B2 defg|afec dBAF|DEFD E2:|",
+        "key": "Edorian",
+        "tunebooks": 6367,
+        "aliases": [
+            "Joe Cooley",
+            "Joe Cooley's Fancy",
+            "Luttrell's Pass",
+            "Put The Cake In The Dresser",
+            "Reaping The Rye",
+            "R\u00edl Na Tula\u00ed",
+            "The Tulla"
+        ]
+    },
+    {
+        "id": 10,
+        "name": "The Butterfly",
+        "type": "slip jig",
+        "abc": "|:B2E G2E F3|B2E G2E FED|B2E G2E F3|B2d d2B AFD:|! |:B2d e2f g3|B2d g2e dBA|B2d e2f g2a|b2a g2e dBA:|! |:B3 B2A G2A|B3 BAB dBA|B3 B2A G2A|B2d g2e dBA:|",
+        "key": "Eminor",
+        "tunebooks": 5965,
+        "aliases": [
+            "Barney's Goat",
+            "Eitil Im",
+            "Im Ag Eitilt",
+            "Kick The Peeler",
+            "The Red Admiral Butterfly",
+            "The Red Monarch Butterfly"
+        ]
+    },
+    {
+        "id": 71,
+        "name": "Morrison's",
+        "type": "jig",
+        "abc": "|:E3 B3|EBE AFD|EDE B3|dcB AFD|! E3 B3|EBE AFD|G3 FGA|dAG FED:|! Bee fee|aee fee|Bee fee|a2g fed|! Bee fee|aee fee|gfe d2A|BAG FGA|! Bee fee|aee fee|Bee fee|faf def|! g3 gfe|def g2d|edc d2A|BAG FED|",
+        "key": "Edorian",
+        "tunebooks": 5704,
+        "aliases": [
+            "Lyon's Favourite",
+            "Maurice Carmody's Favourite",
+            "Morrison's Aaron",
+            "Morrison's Comedy",
+            "Morrison's No. 1",
+            "Paddy Stack's Fancy",
+            "Port Ui Mhuirgheasa",
+            "Stick Across The Hob"
+        ]
+    }
+]

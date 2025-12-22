@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TradTune Guesser - Dark Mode</title>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    // Dark Theme Palette
+                    "background-parchment": "#141210", // Deep charcoal/black background
+                    "surface-sepia": "#1F1C18",        // Dark warm grey/brown for cards
+                    "accent-sepia": "#8C6B4A",         // Muted sepia for borders/accents
+                    "text-charcoal": "#A8A29E",        // Light grey for secondary text (was dark)
+                    "primary": "#D6A350",              // Gold for primary actions
+                    "dark-sepia-ink": "#EAE0D5",       // Light parchment for headings (was dark ink)
+                    "dark-surface": "#000000",         // For deep dark elements
+                },
+                fontFamily: {
+                    "display": ["Lexend", "sans-serif"]
+                },
+                borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+            },
+        },
+    }
+</script>
+<style>
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+        background: #141210;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #8C6B4A;
+        border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #D6A350;
+    }
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+        20%, 40%, 60%, 80% { transform: translateX(4px); }
+    }
+    .animate-shake {
+        animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+    }
+</style>
+</head>
+<body class="bg-background-parchment text-text-charcoal font-display min-h-screen flex flex-col">
+<header class="sticky top-0 z-50 w-full border-b border-white/5 bg-surface-sepia/95 backdrop-blur-md shadow-sm">
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex h-16 items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center size-9 rounded-lg bg-primary text-surface-sepia shadow-sm">
+<span class="material-symbols-outlined text-[24px]">music_note</span>
+</div>
+<h1 class="text-2xl font-bold tracking-tight text-dark-sepia-ink">TradTune Guesser</h1>
+</div>
+<div class="flex items-center gap-3">
+<button class="p-2 text-text-charcoal hover:text-primary transition-colors rounded-lg hover:bg-white/5">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="size-9 rounded-full bg-gradient-to-tr from-primary to-accent-sepia border-2 border-surface-sepia shadow-sm" data-alt="User avatar gradient"></div>
+</div>
+</div>
+</div>
+</header>
+<div class="w-full bg-accent-sepia/10 border-b border-white/5 shadow-md">
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex items-center justify-center gap-8 sm:gap-12 h-20 text-dark-sepia-ink w-full overflow-x-auto">
+<div class="flex flex-col items-center gap-0 whitespace-nowrap group cursor-help relative">
+<span class="material-symbols-outlined text-primary text-[28px] drop-shadow-sm mb-1">trophy</span>
+<div class="flex flex-col items-center leading-none">
+<span class="text-[10px] font-bold uppercase tracking-wider opacity-70">Score</span>
+<span class="font-mono text-xl font-black tracking-wide">120</span>
+</div>
+</div>
+<div class="w-px h-10 bg-white/10"></div>
+<div class="flex flex-col items-center gap-0 whitespace-nowrap">
+<span class="material-symbols-outlined text-primary text-[28px] drop-shadow-sm mb-1">flag</span>
+<div class="flex flex-col items-center leading-none">
+<span class="text-[10px] font-bold uppercase tracking-wider opacity-70">Round</span>
+<span class="font-mono text-xl font-black tracking-wide">3/10</span>
+</div>
+</div>
+<div class="w-px h-10 bg-white/10"></div>
+<div class="flex flex-col items-center gap-0 whitespace-nowrap">
+<span class="material-symbols-outlined text-primary text-[28px] drop-shadow-sm mb-1">timer</span>
+<div class="flex flex-col items-center leading-none">
+<span class="text-[10px] font-bold uppercase tracking-wider opacity-70">Time</span>
+<span class="font-mono text-xl font-black tracking-wide">04:23</span>
+</div>
+</div>
+<div class="w-px h-10 bg-white/10"></div>
+<div class="flex flex-col items-center gap-0 whitespace-nowrap">
+<span class="material-symbols-outlined text-orange-400 text-[28px] drop-shadow-sm mb-1">local_fire_department</span>
+<div class="flex flex-col items-center leading-none">
+<span class="text-[10px] font-bold uppercase tracking-wider opacity-70">Streak</span>
+<span class="font-mono text-xl font-black tracking-wide">5</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<main class="flex-grow p-4 md:p-6 lg:p-8 flex justify-center">
+<div class="max-w-3xl w-full flex flex-col gap-6">
+<div class="w-full relative px-2 py-4">
+<div class="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+<span class="material-symbols-outlined text-[120px] text-white">graphic_eq</span>
+</div>
+<div class="relative z-10">
+<div class="flex items-center gap-5 mb-5">
+<div class="relative size-20 shrink-0 rounded-lg overflow-hidden bg-surface-sepia shadow-inner border border-white/10">
+<div class="absolute inset-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-white/20 text-4xl">music_note</span>
+</div>
+<div class="absolute inset-0 bg-cover bg-center opacity-30 mix-blend-overlay" data-alt="Abstract music visualizer background" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAvmd1YPW7XA2vz0zQP3XAJzxGqJzyMa8YFpSs64-VYr5TG4vUjGxGajrH3MLj2OEScOE1DnhH0WLwapPlmr0uLyXfT8MGywlNkg3iXQdOV8IpvKPxQ7z4yyFx_cnM3tGK7SWPGsYtI16XdTV3qrlC5NVVpahvV8MwFSQKw0bUMHmyv663FYSevFb2cSFO_36GgoYQpX5oc1G1twS4m9AmMsdRy-wyaWdPQXsS3NodvBQpIdkXIKKHQUR24hJ260Za1V-OAdLXJsteK');"></div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-1">
+<span class="inline-flex items-center rounded-md bg-accent-sepia/20 px-2 py-0.5 text-xs font-medium text-primary ring-1 ring-inset ring-primary/20">Now Playing</span>
+</div>
+<h2 class="text-2xl font-bold text-dark-sepia-ink truncate">Mystery Tune #42</h2>
+<p class="text-text-charcoal/70 text-base">Unknown Artist</p>
+</div>
+<button class="size-14 flex items-center justify-center rounded-full bg-primary text-surface-sepia hover:bg-primary/90 hover:scale-105 transition-all shadow-lg shadow-black/30 border border-white/10">
+<span class="material-symbols-outlined fill-current text-[32px]" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+<div class="space-y-3 bg-white/5 p-4 rounded-lg border border-white/5">
+<div class="relative h-2 bg-white/10 rounded-full overflow-hidden cursor-pointer group">
+<div class="absolute top-0 left-0 h-full w-[35%] bg-primary rounded-full group-hover:bg-primary/90 transition-colors shadow-sm"></div>
+</div>
+<div class="flex justify-between text-xs text-text-charcoal/60 font-mono font-medium">
+<span>0:14</span>
+<span>1:32</span>
+</div>
+</div>
+<div class="mt-4 flex items-center justify-between">
+<button class="flex items-center gap-2 text-sm font-medium text-accent-sepia hover:text-primary transition-colors group">
+<span class="material-symbols-outlined text-[20px]">library_music</span>
+<span>Show Notation</span>
+</button>
+<span class="text-[11px] text-text-charcoal/40 font-mono uppercase tracking-wider">Tap to reveal</span>
+</div>
+</div>
+</div>
+<div class="w-full mt-4 flex flex-col flex-grow">
+<div class="flex flex-col items-center justify-center mb-6 text-center">
+<h2 class="text-2xl font-bold text-dark-sepia-ink">Identify this TUNE</h2>
+<div class="flex items-center gap-2 text-primary mt-2">
+<span class="material-symbols-outlined text-[18px]">hourglass_top</span>
+<span class="text-base font-bold">85 Points</span>
+<span class="text-sm text-text-charcoal/60 italic">(decreasing)</span>
+</div>
+</div>
+<div class="flex flex-col md:flex-row flex-wrap justify-center gap-4 mb-4">
+<button class="relative group w-full md:w-[31%] min-h-[10rem] rounded-xl bg-surface-sepia border border-white/5 p-6 flex flex-col items-center justify-center text-center transition-all hover:border-primary/50 hover:brightness-110 hover:shadow-[0_0_15px_-3px_rgba(214,163,80,0.15)] active:scale-[0.98]">
+<span class="text-xl font-bold text-dark-sepia-ink/90 group-hover:text-dark-sepia-ink leading-[1.3] mb-1">The Kesh</span>
+<span class="text-sm text-text-charcoal/60 italic font-medium">aka The Kesh Jig</span>
+<div class="absolute top-3 right-3 size-2.5 rounded-full bg-primary opacity-0 group-hover:opacity-100 transition-opacity"></div>
+</button>
+<button class="relative group w-full md:w-[31%] min-h-[10rem] rounded-xl bg-surface-sepia border border-white/5 p-6 flex flex-col items-center justify-center text-center transition-all hover:border-primary/50 hover:brightness-110 hover:shadow-[0_0_15px_-3px_rgba(214,163,80,0.15)] active:scale-[0.98]">
+<span class="text-xl font-bold text-dark-sepia-ink/90 group-hover:text-dark-sepia-ink break-words w-full leading-[1.35] mb-1">The Connaughtman's Rambles</span>
+<span class="text-sm text-text-charcoal/60 italic font-medium">aka The Rambles</span>
+</button>
+<button class="relative group w-full md:w-[31%] min-h-[10rem] rounded-xl bg-surface-sepia border border-white/5 p-6 flex flex-col items-center justify-center text-center transition-all hover:border-primary/50 hover:brightness-110 hover:shadow-[0_0_15px_-3px_rgba(214,163,80,0.15)] active:scale-[0.98]">
+<span class="text-xl font-bold text-dark-sepia-ink/90 group-hover:text-dark-sepia-ink leading-[1.3] mb-1">Out on the Ocean</span>
+<span class="text-sm text-text-charcoal/60 italic font-medium">aka Port an Deoraí</span>
+</button>
+</div>
+<div class="mt-8 mb-6">
+<button class="w-full h-16 rounded-xl bg-surface-sepia/40 text-accent-sepia font-bold text-lg flex items-center justify-center gap-3 px-8 border-2 border-dashed border-white/10 hover:bg-surface-sepia hover:border-accent-sepia hover:text-dark-sepia-ink transition-all active:scale-[0.99]">
+<div class="flex flex-col items-center leading-tight">
+<span>Skip Round</span>
+<span class="text-xs font-normal opacity-70">2 of 3 skips remaining</span>
+</div>
+<span class="material-symbols-outlined text-[24px]">skip_next</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+
+</body></html>
