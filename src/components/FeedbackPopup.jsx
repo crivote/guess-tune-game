@@ -49,6 +49,27 @@ export default function FeedbackPopup(props) {
                 onClick={() => props.onNext()}
             ></div>
 
+            {/* Success Sparkles */}
+            <Show when={props.result.correct}>
+                <div class="fixed inset-0 pointer-events-none z-[110]">
+                    <For each={[...Array(30)]}>
+                        {(_, i) => (
+                            <div
+                                class={`sparkle ${Math.random() > 0.5 ? 'gold' : ''}`}
+                                style={{
+                                    top: '-20px',
+                                    left: `${30 + Math.random() * 40}%`,
+                                    width: `${2 + Math.random() * 5}px`,
+                                    height: `${2 + Math.random() * 5}px`,
+                                    "animation-delay": `${Math.random() * 0.5}s`,
+                                    "animation-duration": `${0.6 + Math.random() * 0.6}s`
+                                }}
+                            />
+                        )}
+                    </For>
+                </div>
+            </Show>
+
             {/* Popup Content */}
             <div
                 class={`feedback-popup opacity-0 relative w-full max-w-sm ${props.result.correct ? 'bg-dark-sepia-ink' : 'bg-[#4A1212]'} border border-accent-sepia/20 rounded-2xl shadow-2xl overflow-hidden transform p-8 flex flex-col items-center text-center`}
@@ -83,7 +104,10 @@ export default function FeedbackPopup(props) {
                     {props.result.correct ? `+${props.result.points} Points` : `That's not the right tune.`}
                 </p>
 
-                <div class="w-full bg-white/5 border border-white/10 rounded-xl p-5 mb-8 relative z-10 backdrop-blur-sm text-left">
+                <div
+                    class="w-full bg-white/5 border border-white/10 rounded-xl p-5 mb-8 relative z-10 backdrop-blur-sm text-left animate__animated animate__flipInX"
+                    style={{ "animation-delay": "0.4s" }}
+                >
                     <p class="text-accent-sepia text-[10px] uppercase tracking-widest font-bold mb-2">
                         {props.result.correct ? 'You identified' : 'The correct tune was'}
                     </p>

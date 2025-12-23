@@ -1,9 +1,17 @@
-import { For } from 'solid-js';
+import { For, createSignal, Show } from 'solid-js';
 import { useGameStore } from '../store/gameStore';
 import { DIFFICULTIES } from '../constants';
 
 export default function DifficultySelector(props) {
     const { settings, applyPreset, isDifficultyUnlocked, getUnlockProgress, isLoggedIn } = useGameStore();
+    const [lastClicked, setLastClicked] = createSignal(null);
+
+    const handleDiffClick = (id) => {
+        if (!isDifficultyUnlocked(id)) return;
+        applyPreset(id);
+        setLastClicked(id);
+        setTimeout(() => setLastClicked(null), 600);
+    };
 
     // Only show main progression difficulties (exclude CUSTOM)
     const mainDifficulties = [
@@ -31,14 +39,14 @@ export default function DifficultySelector(props) {
                     {(diff) => {
                         return (
                             <button
-                                onClick={() => isDifficultyUnlocked(diff.id) && applyPreset(diff.id)}
+                                onClick={() => handleDiffClick(diff.id)}
                                 disabled={!isDifficultyUnlocked(diff.id)}
                                 class={`relative group p-4 rounded-xl border-2 transition-all duration-300 ease-out flex flex-col items-center text-center ${!isDifficultyUnlocked(diff.id)
                                     ? 'bg-white/5 border-transparent cursor-not-allowed'
                                     : settings().id === diff.id
                                         ? 'bg-primary/10 border-primary ring-1 ring-primary/20 hover:scale-110 z-20'
                                         : 'bg-white/35 border-transparent hover:bg-white/10 hover:border-accent-sepia/30 hover:scale-110 z-20'
-                                    }`}
+                                    } ${lastClicked() === diff.id ? 'animate-quick-flash' : ''}`}
                             >
                                 {/* Tooltip Info */}
                                 <Show when={isDifficultyUnlocked(diff.id)}>

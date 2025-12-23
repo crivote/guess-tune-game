@@ -128,6 +128,7 @@ function GameModeTitleToTune() {
                         return (
                             <div
                                 onClick={() => !isAnswered() && !isFailed() && setActiveAudioId(isPlaying() ? null : tune.id)}
+                                style={{ "animation-delay": `${index() * 100}ms` }}
                                 class={`answer-card opacity-0 bg-background-parchment rounded-xl p-4 border-2 transition-all cursor-pointer animate__animated animate__flipInX ${isAnswered()
                                     ? isCorrect()
                                         ? 'border-green-500 bg-green-50 shadow-md scale-[1.02] z-10'

@@ -86,20 +86,20 @@ function GameModeTuneToTitle() {
                 </div>
             </div>
 
-            {/* Main Game Interface */}
-            <div class={`bg-background-parchment rounded-xl p-6 border-2 transition-all duration-500 w-full relative ${isMusicPlaying() ? 'border-primary shadow-[0_0_25px_rgba(214,163,80,0.25)] animate__animated animate__headShake animate__infinite animate__slow' : 'border-accent-sepia/10'}`}>
+            {/* Main Game Interface - Compact Version */}
+            <div class={`bg-background-parchment rounded-xl p-4 border-2 transition-all duration-300 w-full relative ${isMusicPlaying() ? 'border-primary shadow-lg ring-1 ring-primary/20 bg-white/50' : 'border-accent-sepia/10'}`}>
                 <div class="relative z-10">
-                    <div class="flex items-center gap-5 mb-5">
-                        <div class="relative size-20 shrink-0 rounded-lg overflow-hidden bg-dark-sepia-ink shadow-inner border border-accent-sepia/30">
+                    <div class="flex items-center gap-4 mb-3">
+                        <div class="relative size-14 shrink-0 rounded-lg overflow-hidden bg-dark-sepia-ink shadow-inner border border-accent-sepia/30">
                             <div class="absolute inset-0 flex items-center justify-center">
-                                <span class="material-symbols-outlined text-primary/40 text-4xl">music_note</span>
+                                <span class="material-symbols-outlined text-primary/40 text-2xl">music_note</span>
                             </div>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="inline-flex items-center rounded-md bg-accent-sepia/10 px-2 py-0.5 text-xs font-medium text-accent-sepia ring-1 ring-inset ring-accent-sepia/20">Now Playing</span>
+                            <div class="flex items-center gap-2 mb-0.5">
+                                <span class="inline-flex items-center rounded-md bg-accent-sepia/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-tighter text-accent-sepia ring-1 ring-inset ring-accent-sepia/20">Now Playing</span>
                             </div>
-                            <h2 class="text-2xl font-bold text-dark-sepia-ink truncate uppercase">
+                            <h2 class="text-xl font-bold text-dark-sepia-ink truncate uppercase leading-tight">
                                 {gameState() === 'answered' ? currentTune()?.name : 'Mystery Tune'}
                             </h2>
                         </div>
@@ -132,12 +132,13 @@ function GameModeTuneToTitle() {
 
                 <div class="flex flex-col md:flex-row flex-wrap justify-center gap-4 mb-8">
                     <For each={options()}>
-                        {(tune) => {
+                        {(tune, index) => {
                             const isFailed = () => failedOptionIds().includes(tune.id);
                             return (
                                 <button
                                     onClick={() => submitAnswer(tune.id)}
                                     disabled={gameState() === 'answered' || isFailed()}
+                                    style={{ "animation-delay": `${index() * 100}ms` }}
                                     class={`answer-card opacity-0 relative group w-full md:w-[31%] min-h-[8rem] rounded-xl border p-4 flex flex-col items-center justify-center text-center transition-all active:scale-[0.95] hover:scale-[1.02] duration-200 ease-out animate__animated animate__flipInX ${gameState() === 'answered'
                                         ? tune.id === currentTune()?.id
                                             ? 'bg-green-100 border-green-500 text-green-800'

@@ -155,12 +155,37 @@ function App() {
                     </Match>
 
                     <Match when={gameState() === 'ready'}>
-                        <div class="flex flex-col items-center justify-center min-h-[400px] gap-8">
-                            <div class={`size-24 rounded-full bg-primary/20 text-primary flex items-center justify-center ${isStarting() ? 'animate-ping duration-1000' : 'animate-pulse'}`}>
+                        <div class="flex flex-col items-center justify-center min-h-[400px] gap-8 relative overflow-hidden">
+                            {/* Falling Sparkles Effect */}
+                            <Show when={isStarting()}>
+                                <div class="absolute inset-0 pointer-events-none z-50">
+                                    <For each={[...Array(30)]}>
+                                        {(_, i) => (
+                                            <div
+                                                class={`sparkle ${Math.random() > 0.5 ? 'gold' : ''}`}
+                                                style={{
+                                                    top: '-20px',
+                                                    left: `${30 + Math.random() * 40}%`,
+                                                    width: `${2 + Math.random() * 5}px`,
+                                                    height: `${2 + Math.random() * 5}px`,
+                                                    "animation-delay": `${Math.random() * 0.4}s`,
+                                                    "animation-duration": `${0.6 + Math.random() * 0.6}s`
+                                                }}
+                                            />
+                                        )}
+                                    </For>
+                                </div>
+                            </Show>
+
+                            <div class={`size-24 rounded-full bg-primary/20 text-primary flex items-center justify-center shadow-xl ${isStarting() ? 'animate-start-flash' : 'animate-bouncing-shadow'}`}>
                                 <span class="material-symbols-outlined text-6xl">graphic_eq</span>
                             </div>
                             <div class="text-center">
-                                <Show when={!isStarting()} fallback={<h2 class="text-4xl font-black text-primary animate-bounce">GET READY...</h2>}>
+                                <Show when={!isStarting()} fallback={
+                                    <div class="animate__animated animate__zoomIn">
+                                        <h2 class="text-5xl font-black text-primary animate-bounce">GET READY...</h2>
+                                    </div>
+                                }>
                                     <h2 class="text-3xl font-black text-dark-sepia-ink mb-2">Ready?</h2>
                                     <p class="text-text-charcoal/60">Click start to enable audio.</p>
                                 </Show>
@@ -168,7 +193,7 @@ function App() {
                             <Show when={!isStarting()}>
                                 <button
                                     onClick={startGame}
-                                    class="bg-primary text-dark-sepia-ink text-xl font-bold py-4 px-12 rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all"
+                                    class="bg-primary text-dark-sepia-ink text-xl font-bold py-4 px-12 rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all animate-long-shake-x"
                                 >
                                     START GAME
                                 </button>
