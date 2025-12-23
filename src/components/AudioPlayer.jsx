@@ -1,4 +1,4 @@
-import { createSignal, onMount, onCleanup, createEffect } from 'solid-js';
+import { createSignal, onMount, onCleanup, createEffect, Show } from 'solid-js';
 import abcjs from 'abcjs';
 import 'abcjs/abcjs-audio.css';
 import { useGameStore } from '../store/gameStore';
@@ -129,6 +129,8 @@ function AudioPlayer(props) {
     createEffect(() => {
         if (synthControl) {
             if (props.isPlaying) {
+                // Seek to start to ensure we don't get stuck at the end
+                synthControl.seek(0, "percent");
                 synthControl.play();
             } else {
                 synthControl.pause();
@@ -136,12 +138,33 @@ function AudioPlayer(props) {
         }
     });
 
+    const togglePlay = () => {
+        if (props.onToggle) {
+            props.onToggle(!props.isPlaying);
+        }
+    };
+
     return (
-        <div class="w-full flex flex-col items-center gap-4">
-            {/* Controls area - Visible */}
+        <div class={`w-full flex flex-col items-center ${props.minimal ? '' : 'gap-4'}`}>
+            {/* Custom Minimal Control */}
+            <Show when={props.minimal}>
+                <button
+                    onClick={togglePlay}
+                    class={`size-16 rounded-full flex items-center justify-center transition-all shadow-lg hover:scale-105 active:scale-95 ${props.isPlaying
+                        ? 'bg-primary text-dark-sepia-ink shadow-primary/30 animate__animated animate__pulse animate__infinite'
+                        : 'bg-surface-sepia border-2 border-accent-sepia/20 text-accent-sepia hover:border-primary hover:text-primary'
+                        }`}
+                >
+                    <span class="material-symbols-outlined text-3xl font-bold">
+                        {props.isPlaying ? 'stop' : 'play_arrow'}
+                    </span>
+                </button>
+            </Show>
+
+            {/* Default Controls area - Hidden in minimal mode but required for synth */}
             <div
                 id={`audio-player-${instanceId}`}
-                class="w-full max-w-md bg-white/10 rounded-lg p-2"
+                class={`w-full max-w-md bg-white/10 rounded-lg p-2 ${props.minimal ? 'hidden' : ''}`}
                 style={{ "min-height": "40px" }}
             ></div>
 

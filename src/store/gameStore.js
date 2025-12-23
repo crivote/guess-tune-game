@@ -1,5 +1,19 @@
 import { createSignal, createMemo, createEffect } from 'solid-js';
 import { soundManager } from '../utils/SoundManager';
+import { STORAGE_VERSION, DIFFICULTIES, DIFFICULTY_ORDER, SCORING, TIMING } from '../constants';
+
+// Storage Versioning and Migration
+const checkStorageVersion = () => {
+    const savedVersion = localStorage.getItem('storageVersion');
+    if (!savedVersion || parseInt(savedVersion) < STORAGE_VERSION) {
+        // Discard all old data on version mismatch or missing version
+        localStorage.clear();
+        localStorage.setItem('storageVersion', STORAGE_VERSION.toString());
+        console.log(`Storage migrated to version ${STORAGE_VERSION}. Old data cleared.`);
+    }
+};
+
+checkStorageVersion();
 
 const [tunes, setTunes] = createSignal([]);
 const [currentTune, setCurrentTune] = createSignal(null);
@@ -42,73 +56,6 @@ const [highScore, setHighScore] = createSignal(JSON.parse(localStorage.getItem('
 
 const [audioContext, setAudioContext] = createSignal(null);
 
-export const DIFFICULTIES = {
-    BEGINNER: {
-        id: 'BEGINNER',
-        name: 'Beginner',
-        numOptions: 3,
-        maxTries: 2,
-        roundsCount: 10,
-        timeLimit: 0, // No limit
-        penalty: 0,
-        maxSkips: 2,
-        poolFilters: { type: 'all', minTunebooks: 0, topN: 100 },
-        maxPossibleScore: 1000,
-        unlockRequirement: 0 // Always unlocked
-    },
-    BASIC: {
-        id: 'BASIC',
-        name: 'Basic',
-        numOptions: 4,
-        maxTries: 2,
-        roundsCount: 20,
-        timeLimit: 60,
-        penalty: -10,
-        maxSkips: 1,
-        poolFilters: { type: 'all', minTunebooks: 0, topN: 250 },
-        maxPossibleScore: 3500,
-        unlockRequirement: 750
-    },
-    MEDIUM: {
-        id: 'MEDIUM',
-        name: 'Medium',
-        numOptions: 5,
-        maxTries: 1,
-        roundsCount: 30,
-        timeLimit: 40,
-        penalty: -25,
-        maxSkips: 0,
-        poolFilters: { type: 'all', minTunebooks: 0, topN: 500 },
-        maxPossibleScore: 12000,
-        unlockRequirement: 2500
-    },
-    HARD: {
-        id: 'HARD',
-        name: 'Hard',
-        numOptions: 6,
-        maxTries: 1,
-        roundsCount: 40,
-        timeLimit: 30,
-        penalty: -50,
-        maxSkips: 0,
-        poolFilters: { type: 'all', minTunebooks: 0, topN: 1000 },
-        maxPossibleScore: 40000,
-        unlockRequirement: 9000
-    },
-    CUSTOM: {
-        id: 'CUSTOM',
-        name: 'Custom',
-        numOptions: 4,
-        maxTries: 1,
-        roundsCount: 10,
-        timeLimit: 30,
-        penalty: -10,
-        maxSkips: 3,
-        poolFilters: { type: 'all', minTunebooks: 0 },
-        maxPossibleScore: 0,
-        unlockRequirement: 0
-    }
-};
 
 const [settings, setSettings] = createSignal(JSON.parse(localStorage.getItem('gameSettings')) || DIFFICULTIES.BEGINNER);
 
@@ -116,7 +63,6 @@ const [triesLeft, setTriesLeft] = createSignal(1);
 const [currentPoolSize, setCurrentPoolSize] = createSignal(0);
 
 // Difficulty unlock helpers
-const DIFFICULTY_ORDER = ['BEGINNER', 'BASIC', 'MEDIUM', 'HARD'];
 
 function getPreviousDifficulty(difficultyId) {
     const index = DIFFICULTY_ORDER.indexOf(difficultyId);
@@ -126,7 +72,8 @@ function getPreviousDifficulty(difficultyId) {
 function getBestScoreForDifficulty(difficultyId, historyData) {
     const diffHistory = historyData[difficultyId] || [];
     if (diffHistory.length === 0) return 0;
-    return Math.max(...diffHistory.map(h => h.score));
+    // Sum the scores of the top performances to reward cumulative effort
+    return diffHistory.reduce((sum, run) => sum + run.score, 0);
 }
 
 function isDifficultyUnlocked(difficultyId, historyData) {
@@ -139,6 +86,9 @@ function isDifficultyUnlocked(difficultyId, historyData) {
     const prevDiffId = getPreviousDifficulty(difficultyId);
     if (!prevDiffId) return true;
 
+    // Sequential check: Previous difficulty must be unlocked first
+    if (!isDifficultyUnlocked(prevDiffId, historyData)) return false;
+
     const bestScore = getBestScoreForDifficulty(prevDiffId, historyData);
     return bestScore >= difficulty.unlockRequirement;
 }
@@ -149,6 +99,9 @@ function getUnlockProgress(difficultyId, historyData) {
 
     const prevDiffId = getPreviousDifficulty(difficultyId);
     if (!prevDiffId) return 100;
+
+    // If previous level is not unlocked, progress for this level is 0
+    if (!isDifficultyUnlocked(prevDiffId, historyData)) return 0;
 
     const bestScore = getBestScoreForDifficulty(prevDiffId, historyData);
     const progress = (bestScore / difficulty.unlockRequirement) * 100;
@@ -266,7 +219,15 @@ export function useGameStore() {
             setIsStarting(false);
             setGameState('playing');
             nextRound(true);
-        }, 1000); // 2 seconds delay for the start sound
+        }, TIMING.START_GAME_DELAY);
+    };
+
+    const getRoundTimeLimit = () => {
+        const baseLimit = settings().timeLimit;
+        if (baseLimit > 0 && gameMode() === 'title-to-tune') {
+            return baseLimit * 2;
+        }
+        return baseLimit;
     };
 
     const nextRound = (isFirstRound = false) => {
@@ -313,7 +274,7 @@ export function useGameStore() {
         const gameOptions = [tune, ...distractors].sort(() => Math.random() - 0.5);
         setOptions(gameOptions);
         setTriesLeft(settings().maxTries);
-        setTimer(settings().timeLimit);
+        setTimer(getRoundTimeLimit()); // Use dynamic limit
         setGameState('playing');
         setIsMusicPlaying(true);
     };
@@ -322,21 +283,24 @@ export function useGameStore() {
         if (gameState() !== 'playing') return;
 
         const correct = selectedTuneId === currentTune().id;
+        const currentLimit = getRoundTimeLimit();
+
         if (correct) {
             // Dynamic Scoring Logic
-            const base = 350; // Adjusted for Beginner ~1000 target
+            const base = SCORING.BASE_POINTS;
             const optionWeight = settings().numOptions / 4;
             const poolWeight = Math.max(0.2, Math.min(1.5, currentPoolSize() / 1000));
 
             // Timing Factor: variable bonus for quick answers
             let timeWeight = 1;
-            if (settings().timeLimit > 0) {
+            if (currentLimit > 0) {
                 // With limit: linear from 2x (instant) to 1x (timeout)
-                timeWeight = 1 + (timer() / settings().timeLimit);
+                // Use currentLimit instead of settings().timeLimit to account for the multiplier
+                timeWeight = 1 + (timer() / currentLimit);
             } else {
-                // Without limit (Beginner): bonus for answering under 5s
-                // Linear from 2x (instant) to 1x (5s or more)
-                const speedBonus = Math.max(0, 1 - (timer() / 5));
+                // Without limit (Beginner): bonus for answering under threshold
+                // Linear from 2x (instant) to 1x (threshold or more)
+                const speedBonus = Math.max(0, 1 - (timer() / SCORING.BEGINNER_SPEED_THRESHOLD));
                 timeWeight = 1 + speedBonus;
             }
 
@@ -364,7 +328,7 @@ export function useGameStore() {
                 correct: true,
                 points: totalRoundScore,
                 bonus: streakBonus,
-                timeTaken: settings().timeLimit > 0 ? (settings().timeLimit - timer()) : timer(),
+                timeTaken: currentLimit > 0 ? (currentLimit - timer()) : timer(),
                 speedBonus: Math.round((timeWeight - 1) * 100),
                 ...currentTune()
             };
@@ -381,7 +345,7 @@ export function useGameStore() {
                 const result = {
                     correct: false,
                     points: 0,
-                    timeTaken: settings().timeLimit > 0 ? (settings().timeLimit - timer()) : timer(),
+                    timeTaken: currentLimit > 0 ? (currentLimit - timer()) : timer(),
                     ...currentTune()
                 };
                 setLastResult(result);
@@ -434,15 +398,21 @@ export function useGameStore() {
         const isDuplicate = currentDiffHistory.some(h =>
             h.score === currentResult.score &&
             h.mode === currentResult.mode &&
-            (new Date(currentResult.date) - new Date(h.date)) < 10000
+            (new Date(currentResult.date) - new Date(h.date)) < TIMING.DEDUPLICATION_WINDOW
         );
 
         if (isDuplicate) return;
 
-        // Add new result, sort by score (desc), keep top 5
-        const newDiffHistory = [currentResult, ...currentDiffHistory]
+        // Add new result, sort by score (desc), keep top scores PER MODE
+        const sameModeHistory = currentDiffHistory.filter(h => h.mode === currentResult.mode);
+        const otherModeHistory = currentDiffHistory.filter(h => h.mode !== currentResult.mode);
+
+        const newSameModeHistory = [currentResult, ...sameModeHistory]
             .sort((a, b) => b.score - a.score)
             .slice(0, 5);
+
+        const newDiffHistory = [...newSameModeHistory, ...otherModeHistory]
+            .sort((a, b) => b.score - a.score);
 
         const newHistory = { ...history(), [diffId]: newDiffHistory };
         setHistory(newHistory);

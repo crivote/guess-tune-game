@@ -1,13 +1,20 @@
 import { For, Show, createSignal } from 'solid-js';
-import { useGameStore, DIFFICULTIES } from '../store/gameStore';
+import { useGameStore } from '../store/gameStore';
+import { DIFFICULTIES } from '../constants';
 
 export default function HistoryList() {
     const { history, isLoggedIn } = useGameStore();
     const [activeTab, setActiveTab] = createSignal('BEGINNER');
+    const [activeMode, setActiveMode] = createSignal('tune-to-title');
 
     const formatDate = (dateStr) => {
         const d = new Date(dateStr);
         return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    };
+
+    const filteredHistory = () => {
+        const diffHistory = history()[activeTab()] || [];
+        return diffHistory.filter(run => run.mode === activeMode());
     };
 
     return (
@@ -30,13 +37,14 @@ export default function HistoryList() {
                     </div>
                 </div>
             }>
-                <div class="flex gap-2 mb-4 overflow-x-auto pb-2">
+                {/* Difficulty Buttons */}
+                <div class="flex gap-2 mb-3 overflow-x-auto pb-2 border-b border-white/5">
                     <For each={Object.values(DIFFICULTIES).filter(d => d.id !== 'CUSTOM')}>
                         {(diff) => (
                             <button
                                 onClick={() => setActiveTab(diff.id)}
-                                class={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors ${activeTab() === diff.id
-                                    ? 'bg-primary text-dark-sepia-ink'
+                                class={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${activeTab() === diff.id
+                                    ? 'bg-primary text-dark-sepia-ink scale-105 shadow-lg'
                                     : 'bg-white/5 text-white/40 hover:bg-white/10'
                                     }`}
                             >
@@ -46,15 +54,39 @@ export default function HistoryList() {
                     </For>
                 </div>
 
-                <div class="space-y-3 min-h-[200px]">
-                    <For each={history()[activeTab()] || []} fallback={
+                {/* Mode Tabs */}
+                <div class="flex items-center gap-2 mb-6 bg-white/5 p-1 rounded-lg w-fit">
+                    <button
+                        onClick={() => setActiveMode('tune-to-title')}
+                        class={`flex items-center gap-2 px-4 py-1.5 rounded text-[10px] font-black uppercase tracking-widest transition-all ${activeMode() === 'tune-to-title'
+                            ? 'bg-accent-sepia text-white shadow-md'
+                            : 'text-white/40 hover:text-white'
+                            }`}
+                    >
+                        <span class="material-symbols-outlined text-xs">headphones</span>
+                        Tune to Title
+                    </button>
+                    <button
+                        onClick={() => setActiveMode('title-to-tune')}
+                        class={`flex items-center gap-2 px-4 py-1.5 rounded text-[10px] font-black uppercase tracking-widest transition-all ${activeMode() === 'title-to-tune'
+                            ? 'bg-accent-sepia text-white shadow-md'
+                            : 'text-white/40 hover:text-white'
+                            }`}
+                    >
+                        <span class="material-symbols-outlined text-xs">menu_book</span>
+                        Title to Tune
+                    </button>
+                </div>
+
+                <div class="space-y-3 min-h-[220px]">
+                    <For each={filteredHistory()} fallback={
                         <div class="py-10 text-center opacity-30 italic flex flex-col items-center">
                             <span class="material-symbols-outlined text-4xl mb-2 opacity-50">sports_score</span>
-                            No scores for {DIFFICULTIES[activeTab()].name} yet.
+                            No scores for this mode yet.
                         </div>
                     }>
                         {(run, index) => (
-                            <div class="bg-white/5 rounded-xl p-4 flex items-center justify-between border border-white/5 hover:bg-white/10 transition-colors group">
+                            <div class="bg-white/5 rounded-xl p-4 flex items-center justify-between border border-white/5">
                                 <div class="flex items-center gap-4">
                                     <div class={`size-8 rounded-full flex items-center justify-center font-black text-dark-sepia-ink ${index() === 0 ? 'bg-yellow-400' :
                                         index() === 1 ? 'bg-gray-300' :
@@ -62,10 +94,10 @@ export default function HistoryList() {
                                         }`}>
                                         {index() + 1}
                                     </div>
-                                    <div class="flex flex-col gap-1">
-                                        <span class="text-xs opacity-50 font-medium">{formatDate(run.date)}</span>
-                                        <div class="text-[10px] opacity-40 uppercase tracking-tight">
-                                            {run.mode === 'tune-to-title' ? 'Tune to Title' : 'Title to Tune'} • Max Streak: {run.maxStreak || 0}
+                                    <div class="flex flex-col gap-0.5">
+                                        <span class="text-xs opacity-60 font-medium">{formatDate(run.date)}</span>
+                                        <div class="text-[10px] opacity-40 uppercase tracking-wider font-bold">
+                                            Max Streak: {run.maxStreak || 0}
                                         </div>
                                     </div>
                                 </div>

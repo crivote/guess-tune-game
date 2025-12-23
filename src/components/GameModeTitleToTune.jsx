@@ -1,5 +1,6 @@
 import { For, createSignal, Show, onMount, onCleanup, createEffect } from 'solid-js';
 import { useGameStore } from '../store/gameStore';
+import { TIMING } from '../constants';
 import AudioPlayer from './AudioPlayer';
 import FeedbackPopup from './FeedbackPopup';
 import WrongTryPopup from './WrongTryPopup';
@@ -13,7 +14,13 @@ function GameModeTitleToTune() {
         setShowWrongTryPopup, isMusicPlaying, setIsMusicPlaying
     } = useGameStore();
 
+    const [activeAudioId, setActiveAudioId] = createSignal(null);
     let timerInterval;
+
+    const handleAnswer = (tuneId) => {
+        setActiveAudioId(null);
+        submitAnswer(tuneId);
+    };
 
     onMount(() => {
         timerInterval = setInterval(() => {
@@ -29,7 +36,7 @@ function GameModeTitleToTune() {
                     setTimer(t => t + 1);
                 }
             }
-        }, 1000);
+        }, TIMING.TIMER_INTERVAL);
     });
 
     onCleanup(() => clearInterval(timerInterval));
@@ -37,17 +44,31 @@ function GameModeTitleToTune() {
     createEffect(() => {
         const opts = options();
         if (opts.length > 0) {
+            // New round started, reset audio
+            setActiveAudioId(null);
+
             setTimeout(() => {
                 animate(
                     ".answer-card",
-                    { opacity: [0, 1], transform: ["translateX(-20px)", "none"] },
+                    { opacity: [0, 1] },
                     {
                         delay: stagger(0.1),
-                        duration: 0.4,
-                        easing: "cubic-bezier(0.34, 1.56, 0.64, 1)"
+                        duration: 0.4
                     }
                 );
             }, 50);
+        }
+    });
+
+    // Sync local active audio with global playing state
+    createEffect(() => {
+        setIsMusicPlaying(!!activeAudioId());
+    });
+
+    // Stop audio when answered
+    createEffect(() => {
+        if (gameState() === 'answered') {
+            setActiveAudioId(null);
         }
     });
 
@@ -96,48 +117,50 @@ function GameModeTitleToTune() {
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 gap-4 mb-8">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
                 <For each={options()}>
                     {(tune, index) => {
                         const isFailed = () => failedOptionIds().includes(tune.id);
+                        const isAnswered = () => gameState() === 'answered';
+                        const isCorrect = () => tune.id === currentTune()?.id;
+                        const isPlaying = () => activeAudioId() === tune.id;
+
                         return (
-                            <div class={`answer-card opacity-0 bg-background-parchment rounded-xl p-4 border-2 transition-all ${gameState() === 'answered'
-                                ? tune.id === currentTune()?.id
-                                    ? 'border-green-500 bg-green-50'
-                                    : 'border-accent-sepia/5 opacity-60'
-                                : isFailed()
-                                    ? 'border-red-200 bg-red-50 opacity-40 grayscale'
-                                    : 'border-accent-sepia/10'
-                                }`}>
-                                <div class="flex items-center gap-4">
-                                    <div class="flex-grow">
+                            <div
+                                onClick={() => !isAnswered() && !isFailed() && setActiveAudioId(isPlaying() ? null : tune.id)}
+                                class={`answer-card opacity-0 bg-background-parchment rounded-xl p-4 border-2 transition-all cursor-pointer animate__animated animate__flipInX ${isAnswered()
+                                    ? isCorrect()
+                                        ? 'border-green-500 bg-green-50 shadow-md scale-[1.02] z-10'
+                                        : 'border-accent-sepia/5 opacity-60'
+                                    : isFailed()
+                                        ? 'border-red-200 bg-red-50 opacity-40 grayscale animate__shakeX cursor-not-allowed'
+                                        : isPlaying()
+                                            ? 'border-primary bg-white shadow-[0_10px_25px_rgba(214,163,80,0.3)] animate__animated animate__headShake animate__infinite'
+                                            : 'border-accent-sepia/10 hover:border-primary/50 hover:bg-white hover:shadow-lg'
+                                    }`}>
+                                <div class="flex items-center justify-between gap-4">
+                                    <div class="flex flex-col">
+                                        <span class={`text-[11px] uppercase font-black transition-colors ${isPlaying() ? 'text-primary' : 'text-accent-sepia/40'}`}>
+                                            {isPlaying() ? 'Now Playing' : isFailed() ? 'Failed' : isAnswered() ? (isCorrect() ? 'Winner' : 'Incorrect') : 'Click to Hear'}
+                                        </span>
+                                        <div class="flex items-center gap-2 mt-1">
+                                            <div class={`size-2 rounded-full ${isPlaying() ? 'bg-primary animate-pulse' : 'bg-accent-sepia/20'}`}></div>
+                                            <span class="text-sm font-bold text-dark-sepia-ink/80">Melody {index() + 1}</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                                         <AudioPlayer
                                             abc={tune.abc}
                                             tuneKey={tune.key}
                                             tuneType={tune.type}
                                             showNotation={false}
-                                            isPlaying={isMusicPlaying() && currentTune()?.id === tune.id}
+                                            minimal={true}
+                                            isPlaying={activeAudioId() === tune.id}
                                             onToggle={(playing) => {
-                                                if (playing) setIsMusicPlaying(true);
+                                                setActiveAudioId(playing ? tune.id : null);
                                             }}
                                         />
                                     </div>
-                                    <button
-                                        onClick={() => submitAnswer(tune.id)}
-                                        disabled={gameState() === 'answered' || isFailed()}
-                                        class={`h-14 px-6 rounded-lg font-bold transition-all active:scale-95 ${gameState() === 'answered'
-                                            ? tune.id === currentTune()?.id
-                                                ? 'bg-green-600 text-white'
-                                                : 'bg-surface-sepia/50 text-text-charcoal/40'
-                                            : isFailed()
-                                                ? 'bg-red-400 text-white cursor-not-allowed'
-                                                : 'bg-primary text-dark-sepia-ink hover:bg-primary/90'
-                                            }`}
-                                    >
-                                        {gameState() === 'answered'
-                                            ? tune.id === currentTune()?.id ? 'Correct' : 'Option ' + (index() + 1)
-                                            : isFailed() ? 'Failed' : 'Choose This'}
-                                    </button>
                                 </div>
                             </div>
                         );
@@ -145,17 +168,39 @@ function GameModeTitleToTune() {
                 </For>
             </div>
 
-            <Show when={gameState() === 'playing' && skipsLeft() > 0}>
-                <div class="flex justify-center">
+            <div class="flex flex-col items-center gap-4 mb-10">
+                <button
+                    onClick={() => handleAnswer(activeAudioId())}
+                    disabled={gameState() !== 'playing' || !activeAudioId()}
+                    class={`group relative w-full max-w-sm h-16 rounded-2xl font-black text-xl uppercase tracking-widest transition-all shadow-xl flex items-center justify-center gap-3 ${!activeAudioId() || gameState() !== 'playing'
+                        ? 'bg-accent-sepia/10 text-accent-sepia/30 border-2 border-accent-sepia/5 cursor-not-allowed grayscale'
+                        : 'bg-primary text-white hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] border-b-4 border-dark-sepia-ink/20'
+                        }`}
+                >
+                    <span class={`material-symbols-outlined text-3xl transition-transform ${activeAudioId() ? 'group-hover:translate-x-1' : ''}`}>
+                        {activeAudioId() ? 'task_alt' : 'lock'}
+                    </span>
+                    <span>Confirm Selection</span>
+                    <Show when={activeAudioId()}>
+                        <div class="absolute -top-1 -right-1 flex">
+                            <span class="relative flex h-3 w-3">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+                            </span>
+                        </div>
+                    </Show>
+                </button>
+
+                <Show when={gameState() === 'playing' && skipsLeft() > 0}>
                     <button
                         onClick={skipRound}
-                        class="flex items-center gap-2 px-6 py-3 rounded-xl bg-surface-sepia border-2 border-accent-sepia/20 text-accent-sepia hover:text-dark-sepia-ink hover:border-primary transition-all text-sm font-black uppercase tracking-widest shadow-sm group"
+                        class="flex items-center gap-2 px-6 py-2 rounded-xl text-accent-sepia/60 hover:text-accent-sepia hover:bg-accent-sepia/5 transition-all text-xs font-bold uppercase tracking-widest group"
                     >
                         <span class="material-symbols-outlined group-hover:rotate-180 transition-transform duration-500">skip_next</span>
-                        <span>Skip Round ({skipsLeft()} Left)</span>
+                        <span>Skip ({skipsLeft()})</span>
                     </button>
-                </div>
-            </Show>
+                </Show>
+            </div>
 
             <Show when={gameState() === 'answered'}>
                 <FeedbackPopup result={lastResult()} onNext={nextRound} />

@@ -1,11 +1,12 @@
 import { Show, onMount, onCleanup, createSignal } from 'solid-js';
 import { animate } from "motion";
 import { useGameStore } from '../store/gameStore';
+import { TIMING } from '../constants';
 
 export default function FeedbackPopup(props) {
     // props: result { correct, points, name, type, key, ... }, onNext
     const { round, settings } = useGameStore();
-    const [timeLeft, setTimeLeft] = createSignal(10);
+    const [timeLeft, setTimeLeft] = createSignal(TIMING.FEEDBACK_AUTO_NEXT);
     let timer;
 
     const isLastRound = () => round() === settings().roundsCount;
@@ -69,7 +70,7 @@ export default function FeedbackPopup(props) {
 
                 <div class="feedback-icon relative mb-4 z-10">
                     <div class={`absolute inset-0 ${props.result.correct ? 'bg-primary/20' : 'bg-red-500/10'} blur-xl rounded-full scale-150`}></div>
-                    <span class={`material-symbols-outlined ${props.result.correct ? 'text-primary' : 'text-red-400'} text-7xl fill-current drop-shadow-md relative z-10`} style="font-variation-settings: 'FILL' 1;">
+                    <span class={`material-symbols-outlined ${props.result.correct ? 'text-primary animate-long-heartbeat' : 'text-red-400'} text-7xl fill-current drop-shadow-md relative z-10`} style="font-variation-settings: 'FILL' 1;">
                         {props.result.correct ? 'star' : 'close'}
                     </span>
                 </div>
@@ -115,7 +116,7 @@ export default function FeedbackPopup(props) {
 
                 <button
                     onClick={() => props.onNext()}
-                    class="w-full bg-primary hover:bg-primary/90 text-dark-sepia-ink font-bold text-lg py-4 rounded-xl shadow-[0_4px_14px_0_rgba(214,163,80,0.39)] transition-all hover:scale-[1.02] active:scale-[0.98] relative z-10 flex items-center justify-center gap-2"
+                    class="w-full bg-primary hover:bg-primary/90 text-dark-sepia-ink font-bold text-lg py-4 rounded-xl shadow-[0_4px_14px_0_rgba(214,163,80,0.39)] transition-all hover:scale-[1.02] active:scale-[0.98] relative z-10 flex items-center justify-center gap-2 animate-long-shake"
                 >
                     <span>{isLastRound() ? 'Finish Game' : 'Next Round'} ({timeLeft()}s)</span>
                     <span class="material-symbols-outlined">

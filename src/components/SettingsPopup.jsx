@@ -1,5 +1,6 @@
 import { onMount, onCleanup, Show, createSignal } from 'solid-js';
-import { useGameStore, DIFFICULTIES } from '../store/gameStore';
+import { useGameStore } from '../store/gameStore';
+import { DIFFICULTIES } from '../constants';
 
 export default function SettingsPopup(props) {
     const { settings, updateSettings } = useGameStore();

@@ -1,5 +1,6 @@
 import { For } from 'solid-js';
-import { useGameStore, DIFFICULTIES } from '../store/gameStore';
+import { useGameStore } from '../store/gameStore';
+import { DIFFICULTIES } from '../constants';
 
 export default function DifficultySelector(props) {
     const { settings, applyPreset, isDifficultyUnlocked, getUnlockProgress, isLoggedIn } = useGameStore();
@@ -32,13 +33,38 @@ export default function DifficultySelector(props) {
                             <button
                                 onClick={() => isDifficultyUnlocked(diff.id) && applyPreset(diff.id)}
                                 disabled={!isDifficultyUnlocked(diff.id)}
-                                class={`relative p-4 rounded-xl border-2 transition-all flex flex-col items-center text-center group ${!isDifficultyUnlocked(diff.id)
+                                class={`relative group p-4 rounded-xl border-2 transition-all duration-300 ease-out flex flex-col items-center text-center ${!isDifficultyUnlocked(diff.id)
                                     ? 'bg-white/5 border-transparent cursor-not-allowed'
                                     : settings().id === diff.id
-                                        ? 'bg-primary/10 border-primary ring-1 ring-primary/20'
-                                        : 'bg-white/35 border-transparent hover:bg-white/10 hover:border-accent-sepia/30'
+                                        ? 'bg-primary/10 border-primary ring-1 ring-primary/20 hover:scale-110 z-20'
+                                        : 'bg-white/35 border-transparent hover:bg-white/10 hover:border-accent-sepia/30 hover:scale-110 z-20'
                                     }`}
                             >
+                                {/* Tooltip Info */}
+                                <Show when={isDifficultyUnlocked(diff.id)}>
+                                    <div class="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 w-48 p-3 bg-dark-sepia-ink text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all z-50 shadow-2xl border border-white/10 translate-y-2 group-hover:translate-y-0">
+                                        <div class="space-y-1.5">
+                                            <div class="flex items-center gap-2">
+                                                <span class="material-symbols-outlined text-xs text-primary">psychology</span>
+                                                <span>{diff.maxTries} {diff.maxTries === 1 ? 'Try' : 'Tries'} / round</span>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <span class="material-symbols-outlined text-xs text-primary">timer</span>
+                                                <span>{diff.timeLimit > 0 ? `${diff.timeLimit}s` : 'No'} limit</span>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <span class="material-symbols-outlined text-xs text-primary">list</span>
+                                                <span>{diff.poolFilters?.topN ? `Top ${diff.poolFilters.topN}` : 'All'} tunes</span>
+                                            </div>
+                                            <div class="flex items-center gap-2 text-red-300">
+                                                <span class="material-symbols-outlined text-xs">rule</span>
+                                                <span>Penalty: {diff.penalty || 0} pts</span>
+                                            </div>
+                                        </div>
+                                        <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 border-l-4 border-l-transparent border-r-4 border-r-transparent border-b-4 border-b-dark-sepia-ink rotate-180"></div>
+                                    </div>
+                                </Show>
+
                                 {/* Lock overlay for locked difficulties */}
                                 <Show when={!isDifficultyUnlocked(diff.id)}>
                                     <>
@@ -106,28 +132,6 @@ export default function DifficultySelector(props) {
                     }}
                 </For>
             </div>
-
-            <div class="mt-6 p-4 bg-dark-sepia-ink/5 rounded-lg border border-dark-sepia-ink/5">
-                <div class="flex flex-wrap justify-between gap-4 text-xs font-medium text-text-charcoal/60">
-                    <div class="flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-sm">psychology</span>
-                        <span>{settings().maxTries} {settings().maxTries === 1 ? 'Try' : 'Tries'} per round</span>
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-sm">timer</span>
-                        <span>{settings().timeLimit > 0 ? `${settings().timeLimit}s` : 'No'} limit</span>
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-sm">list</span>
-                        <span>{settings().poolFilters?.topN ? `Top ${settings().poolFilters.topN} tunes` : '1500 tunes'}</span>
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-sm">rule</span>
-                        <span>Penalty: {settings().penalty || 0} pts</span>
-                    </div>
-                </div>
-            </div>
-
         </div>
     );
 }

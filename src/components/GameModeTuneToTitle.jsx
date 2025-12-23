@@ -1,5 +1,6 @@
 import { For, Show, onMount, onCleanup, createEffect } from 'solid-js';
 import { useGameStore } from '../store/gameStore';
+import { TIMING } from '../constants';
 import AudioPlayer from './AudioPlayer';
 import FeedbackPopup from './FeedbackPopup';
 import WrongTryPopup from './WrongTryPopup';
@@ -29,7 +30,7 @@ function GameModeTuneToTitle() {
                     setTimer(t => t + 1);
                 }
             }
-        }, 1000);
+        }, TIMING.TIMER_INTERVAL);
     });
 
     onCleanup(() => clearInterval(timerInterval));
@@ -42,11 +43,10 @@ function GameModeTuneToTitle() {
             setTimeout(() => {
                 animate(
                     ".answer-card",
-                    { opacity: [0, 1], transform: ["translateY(20px)", "none"] },
+                    { opacity: [0, 1] },
                     {
                         delay: stagger(0.1),
-                        duration: 0.4,
-                        easing: "cubic-bezier(0.34, 1.56, 0.64, 1)"
+                        duration: 0.4
                     }
                 );
             }, 50);
@@ -87,7 +87,7 @@ function GameModeTuneToTitle() {
             </div>
 
             {/* Main Game Interface */}
-            <div class="bg-background-parchment rounded-xl p-6 border-2 border-accent-sepia/10 w-full relative">
+            <div class={`bg-background-parchment rounded-xl p-6 border-2 transition-all duration-500 w-full relative ${isMusicPlaying() ? 'border-primary shadow-[0_0_25px_rgba(214,163,80,0.25)] animate__animated animate__headShake animate__infinite animate__slow' : 'border-accent-sepia/10'}`}>
                 <div class="relative z-10">
                     <div class="flex items-center gap-5 mb-5">
                         <div class="relative size-20 shrink-0 rounded-lg overflow-hidden bg-dark-sepia-ink shadow-inner border border-accent-sepia/30">
@@ -138,7 +138,7 @@ function GameModeTuneToTitle() {
                                 <button
                                     onClick={() => submitAnswer(tune.id)}
                                     disabled={gameState() === 'answered' || isFailed()}
-                                    class={`answer-card opacity-0 relative group w-full md:w-[31%] min-h-[8rem] rounded-xl border p-4 flex flex-col items-center justify-center text-center transition-all active:scale-[0.95] hover:scale-[1.02] duration-200 ease-out ${gameState() === 'answered'
+                                    class={`answer-card opacity-0 relative group w-full md:w-[31%] min-h-[8rem] rounded-xl border p-4 flex flex-col items-center justify-center text-center transition-all active:scale-[0.95] hover:scale-[1.02] duration-200 ease-out animate__animated animate__flipInX ${gameState() === 'answered'
                                         ? tune.id === currentTune()?.id
                                             ? 'bg-green-100 border-green-500 text-green-800'
                                             : 'bg-surface-sepia/50 border-accent-sepia/10 opacity-60'

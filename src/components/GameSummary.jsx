@@ -46,42 +46,46 @@ export default function GameSummary() {
                 <For each={sessionResults()}>
                     {(res, index) => (
                         <div
-                            class={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all shadow-sm ${res.correct
+                            class={`flex items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border-2 transition-all shadow-sm ${res.correct
                                 ? 'bg-green-50/50 border-green-200/50'
                                 : 'bg-red-50/50 border-red-200/50'
                                 }`}
                         >
-                            <div class={`size-8 rounded-full flex items-center justify-center shrink-0 font-black text-xs ${res.correct ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                            <div class={`size-8 rounded-full flex items-center justify-center shrink-0 font-black text-xs mt-1 sm:mt-0 ${res.correct ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
                                 }`}>
                                 {index() + 1}
                             </div>
 
-                            <div class="flex-grow min-w-0">
-                                <a
-                                    href={`https://thesession.org/tunes/${res.id}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    class={`font-bold truncate hover:underline flex items-center gap-2 group/link cursor-pointer w-fit ${res.correct ? 'text-green-900' : 'text-red-900'}`}
-                                >
-                                    {res.name}
-                                    <span class="material-symbols-outlined text-[10px] opacity-0 group-hover/link:opacity-100 transition-opacity">open_in_new</span>
-                                </a>
-                                <div class="flex items-center gap-2 mt-0.5">
-                                    <span class="text-[10px] font-bold text-accent-sepia/70 uppercase">{res.type}</span>
-                                    <span class="text-[10px] text-accent-sepia/40">•</span>
-                                    <span class="text-[10px] font-medium text-text-charcoal/50">Key: {res.key || 'N/A'}</span>
+                            <div class="flex-grow min-w-0 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+                                <div class="flex-grow min-w-0">
+                                    <a
+                                        href={`https://thesession.org/tunes/${res.id}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class={`font-bold truncate hover:underline flex items-center gap-2 group/link cursor-pointer w-fit ${res.correct ? 'text-green-900' : 'text-red-900'}`}
+                                    >
+                                        {res.name}
+                                        <span class="material-symbols-outlined text-[10px] opacity-0 group-hover/link:opacity-100 transition-opacity">open_in_new</span>
+                                    </a>
+                                    <div class="flex items-center gap-2 mt-0.5">
+                                        <span class="text-[10px] font-bold text-accent-sepia/70 uppercase">{res.type}</span>
+                                        <span class="text-[10px] text-accent-sepia/40">•</span>
+                                        <span class="text-[10px] font-medium text-text-charcoal/50">Key: {res.key || 'N/A'}</span>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div class="text-right shrink-0">
-                                <div class="text-[10px] font-bold text-accent-sepia/60 uppercase mb-0.5">Popularity</div>
-                                <div class="text-xs font-black text-dark-sepia-ink">#{res.rank}</div>
-                            </div>
+                                <div class="flex items-center gap-8 sm:gap-6 shrink-0 border-t border-black/5 sm:border-0 pt-2 sm:pt-0">
+                                    <div class="flex flex-col sm:items-end">
+                                        <div class="text-[9px] font-bold text-accent-sepia/60 uppercase mb-0.5">Popularity</div>
+                                        <div class="text-xs font-black text-dark-sepia-ink">#{res.rank}</div>
+                                    </div>
 
-                            <div class="w-16 text-right shrink-0">
-                                <div class="text-[10px] font-bold text-accent-sepia/60 uppercase mb-0.5">Points</div>
-                                <div class={`text-sm font-black ${res.correct ? 'text-green-600' : 'text-red-400'}`}>
-                                    {res.points > 0 ? `+${res.points}` : '0'}
+                                    <div class="flex flex-col sm:items-end min-w-[60px]">
+                                        <div class="text-[9px] font-bold text-accent-sepia/60 uppercase mb-0.5">Points</div>
+                                        <div class={`text-sm font-black ${res.correct ? 'text-green-600' : 'text-red-400'}`}>
+                                            {res.points > 0 ? `+${res.points}` : '0'}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

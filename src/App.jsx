@@ -76,8 +76,10 @@ function App() {
                                 </h2>
                                 <p class="text-lg text-text-charcoal/70 leading-relaxed font-medium">
                                     <strong class="text-dark-sepia-ink">TradTune Guesser</strong> is a challenge for your ears and your memory.
-                                    Listen to the melodies and identify the tunes from the rich tradition of Irish music.
-                                    Unlock more advanced levels and show your skills!
+                                    Listen to the melodies retrieved from <a class="underline font-bold" href="https://thesession.org" target="_blank" rel="noopener noreferrer">thesession.org</a> <em>most popular</em> list and identify the tunes from the rich tradition of Irish music.
+                                    <br />
+                                    <br />
+                                    Unlock more advanced levels, track your scores and show your skills!
                                 </p>
 
                                 <Show when={!isLoggedIn()}>
@@ -127,7 +129,7 @@ function App() {
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl mb-12">
                                 <button
                                     onClick={() => startNewGame('tune-to-title')}
-                                    class="group relative bg-surface-sepia p-6 rounded-2xl border-2 border-accent-sepia/20 hover:border-primary transition-all text-left shadow-sm hover:shadow-xl active:scale-[0.98]"
+                                    class="group relative bg-surface-sepia p-6 rounded-2xl border-2 border-accent-sepia/20 hover:border-primary transition-all duration-300 ease-out text-left shadow-sm hover:shadow-xl hover:scale-[1.03] active:scale-[0.98] hover-animate-tada"
                                 >
                                     <div class="size-14 rounded-xl bg-primary/20 text-primary flex items-center justify-center mb-4 group-hover:bg-primary group-hover:text-dark-sepia-ink transition-colors">
                                         <span class="material-symbols-outlined text-3xl">headphones</span>
@@ -137,14 +139,13 @@ function App() {
                                 </button>
 
                                 <button
-                                    disabled={true}
                                     onClick={() => startNewGame('title-to-tune')}
-                                    class="cursor-not-allowed group relative bg-surface-sepia p-6 rounded-2xl border-2 border-accent-sepia/20 hover:border-primary transition-all text-left shadow-sm hover:shadow-xl active:scale-[0.98]"
+                                    class="group relative bg-surface-sepia p-6 rounded-2xl border-2 border-accent-sepia/20 hover:border-primary transition-all duration-300 ease-out text-left shadow-sm hover:shadow-xl hover:scale-[1.03] active:scale-[0.98] hover-animate-tada"
                                 >
                                     <div class="size-14 rounded-xl bg-accent-sepia/20 text-accent-sepia flex items-center justify-center mb-4 group-hover:bg-accent-sepia group-hover:text-white transition-colors">
                                         <span class="material-symbols-outlined text-3xl">menu_book</span>
                                     </div>
-                                    <h3 class="text-xl font-bold text-dark-sepia-ink mb-1">Title to Tune <span class="text-text-charcoal/60 text-sm">SOON AVAILABLE</span></h3>
+                                    <h3 class="text-xl font-bold text-dark-sepia-ink mb-1">Title to Tune</h3>
                                     <p class="text-text-charcoal/60 text-sm">Given a name, pick the correct melody from audio choices.</p>
                                 </button>
                             </div>
