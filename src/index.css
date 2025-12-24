@@ -147,6 +147,24 @@ body {
   }
 }
 
+@keyframes playing-breathe {
+
+  0%,
+  100% {
+    border-color: rgba(214, 163, 80, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+
+  50% {
+    border-color: rgba(214, 163, 80, 1);
+    box-shadow: 0 10px 30px rgba(214, 163, 80, 0.25);
+  }
+}
+
+.animate-playing-breathe {
+  animation: playing-breathe 2s infinite ease-in-out;
+}
+
 @keyframes quick-flash {
 
   0%,

@@ -139,13 +139,13 @@ function GameModeTuneToTitle() {
                                     onClick={() => submitAnswer(tune.id)}
                                     disabled={gameState() === 'answered' || isFailed()}
                                     style={{ "animation-delay": `${index() * 100}ms` }}
-                                    class={`answer-card opacity-0 relative group w-full md:w-[31%] min-h-[8rem] rounded-xl border p-4 flex flex-col items-center justify-center text-center transition-all active:scale-[0.95] hover:scale-[1.02] duration-200 ease-out animate__animated animate__flipInX ${gameState() === 'answered'
+                                    class={`answer-card opacity-0 relative group w-full md:w-[31%] min-h-[8rem] rounded-xl border p-4 flex flex-col items-center justify-center text-center transition-all active:scale-[0.95] hover:scale-[1.02] duration-200 ease-out ${gameState() === 'answered'
                                         ? tune.id === currentTune()?.id
                                             ? 'bg-green-100 border-green-500 text-green-800'
                                             : 'bg-surface-sepia/50 border-accent-sepia/10 opacity-60'
                                         : isFailed()
                                             ? 'bg-red-50 border-red-200 opacity-40 grayscale cursor-not-allowed'
-                                            : 'bg-surface-sepia border-accent-sepia/20 hover:border-primary/50 hover:bg-surface-sepia/80 shadow-sm hover:shadow-md'
+                                            : 'bg-surface-sepia border-accent-sepia/20 hover:border-primary/50 hover:bg-surface-sepia/80 shadow-sm hover:shadow-md animate__animated animate__flipInX'
                                         }`}
                                 >
                                     <span class="text-lg font-bold text-dark-sepia-ink/90 leading-tight mb-1">{tune.name}</span>

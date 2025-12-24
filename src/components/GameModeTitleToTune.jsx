@@ -117,7 +117,7 @@ function GameModeTitleToTune() {
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8 animate__animated animate__fadeIn">
                 <For each={options()}>
                     {(tune, index) => {
                         const isFailed = () => failedOptionIds().includes(tune.id);
@@ -129,16 +129,14 @@ function GameModeTitleToTune() {
                             <div
                                 onClick={() => !isAnswered() && !isFailed() && setActiveAudioId(isPlaying() ? null : tune.id)}
                                 style={{ "animation-delay": `${index() * 100}ms` }}
-                                class={`answer-card opacity-0 bg-background-parchment rounded-xl p-4 border-2 transition-all cursor-pointer animate__animated animate__flipInX ${isAnswered()
-                                    ? isCorrect()
-                                        ? 'border-green-500 bg-green-50 shadow-md scale-[1.02] z-10'
-                                        : 'border-accent-sepia/5 opacity-60'
-                                    : isFailed()
-                                        ? 'border-red-200 bg-red-50 opacity-40 grayscale animate__shakeX cursor-not-allowed'
-                                        : isPlaying()
-                                            ? 'border-primary bg-white shadow-[0_10px_25px_rgba(214,163,80,0.3)] animate__animated animate__headShake animate__infinite'
-                                            : 'border-accent-sepia/10 hover:border-primary/50 hover:bg-white hover:shadow-lg'
-                                    }`}>
+                                classList={{
+                                    'answer-card bg-background-parchment rounded-xl p-4 border-2 transition-all cursor-pointer': true,
+                                    'border-green-500 bg-green-50 shadow-md scale-[1.02] z-10': isAnswered() && isCorrect(),
+                                    'border-accent-sepia/5 opacity-60': isAnswered() && !isCorrect(),
+                                    'border-red-200 bg-red-50 opacity-40 grayscale animate__animated animate__shakeX cursor-not-allowed': isFailed(),
+                                    'bg-white shadow-xl animate-playing-breathe z-10 scale-[1.02]': isPlaying() && !isAnswered(),
+                                    'border-accent-sepia/10 hover:border-primary/50 hover:bg-white hover:shadow-lg opacity-0 animate__animated animate__flipInX': !isPlaying() && !isFailed() && !isAnswered()
+                                }}>
                                 <div class="flex items-center justify-between gap-4">
                                     <div class="flex flex-col">
                                         <span class={`text-[11px] uppercase font-black transition-colors ${isPlaying() ? 'text-primary' : 'text-accent-sepia/40'}`}>
