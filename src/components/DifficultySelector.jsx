@@ -1,13 +1,22 @@
 import { For, createSignal, Show } from 'solid-js';
 import { useGameStore } from '../store/gameStore';
 import { DIFFICULTIES } from '../constants';
+import { soundManager } from '../utils/SoundManager';
 
 export default function DifficultySelector(props) {
-    const { settings, applyPreset, isDifficultyUnlocked, getUnlockProgress, isLoggedIn } = useGameStore();
+    const { settings, applyPreset, isDifficultyUnlocked, getUnlockProgress, isLoggedIn, initializeAudio } = useGameStore();
     const [lastClicked, setLastClicked] = createSignal(null);
 
-    const handleDiffClick = (id) => {
+    const handleDiffClick = async (id) => {
         if (!isDifficultyUnlocked(id)) return;
+
+        // Start audio context on first user interaction if not already started
+        await initializeAudio();
+
+        if (settings().id !== id) {
+            soundManager.playLevelSelect();
+        }
+
         applyPreset(id);
         setLastClicked(id);
         setTimeout(() => setLastClicked(null), 600);
@@ -62,7 +71,11 @@ export default function DifficultySelector(props) {
                                             </div>
                                             <div class="flex items-center gap-2">
                                                 <span class="material-symbols-outlined text-xs text-primary">list</span>
-                                                <span>{diff.poolFilters?.topN ? `Top ${diff.poolFilters.topN}` : 'All'} tunes</span>
+                                                <span>
+                                                    {diff.poolFilters?.skipN || diff.poolFilters?.topN
+                                                        ? `#${(diff.poolFilters.skipN || 0) + 1} to #${diff.poolFilters.topN || 'End'}`
+                                                        : 'All'} tunes
+                                                </span>
                                             </div>
                                             <div class="flex items-center gap-2 text-red-300">
                                                 <span class="material-symbols-outlined text-xs">rule</span>

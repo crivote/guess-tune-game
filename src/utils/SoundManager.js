@@ -85,6 +85,13 @@ export class SoundManager {
         this.playTone(392.00, 1.5, 'triangle', 0.2); // G4
         this.playTone(523.25, 2.0, 'sine', 0.3); // C5
     }
+
+    playLevelSelect() {
+        if (!this.ctx) return;
+        // Subtle clean click/pop
+        this.playTone(600, 0.05, 'sine', 0);
+        this.playTone(900, 0.05, 'sine', 0.02);
+    }
 }
 
 export const soundManager = new SoundManager(null);

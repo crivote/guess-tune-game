@@ -164,9 +164,12 @@ export function useGameStore() {
         // Apply minTunebooks filter
         pool = pool.filter(t => t.tunebooks >= settings().poolFilters.minTunebooks);
 
-        // Apply topN filter (Easy: top 200, Medium: top 500, Hard: all)
+        // Apply popularity range filter (topN and skipN)
+        const skipN = settings().poolFilters.skipN || 0;
         if (settings().poolFilters.topN) {
-            pool = pool.slice(0, settings().poolFilters.topN);
+            pool = pool.slice(skipN, settings().poolFilters.topN);
+        } else if (skipN > 0) {
+            pool = pool.slice(skipN);
         }
 
         // Apply onlyTop100 filter (legacy support)
@@ -185,12 +188,16 @@ export function useGameStore() {
     };
 
     const initializeAudio = async () => {
-        // Close existing context if open to prevent overlaps
-        const oldCtx = audioContext();
-        if (oldCtx && oldCtx.state !== 'closed') {
+        // Return existing context if already active
+        const existingCtx = audioContext();
+        if (existingCtx && existingCtx.state === 'running') {
+            return existingCtx;
+        }
+
+        // Close existing context if it's in a weird state to prevent overlaps
+        if (existingCtx && existingCtx.state !== 'closed') {
             try {
-                await oldCtx.close();
-                console.log("Old AudioContext closed.");
+                await existingCtx.close();
             } catch (e) {
                 console.warn("Error closing AudioContext:", e);
             }
@@ -284,6 +291,7 @@ export function useGameStore() {
 
         const correct = selectedTuneId === currentTune().id;
         const currentLimit = getRoundTimeLimit();
+        const timeTaken = currentLimit > 0 ? (currentLimit - timer()) : timer();
 
         if (correct) {
             // Dynamic Scoring Logic
@@ -292,17 +300,10 @@ export function useGameStore() {
             const poolWeight = Math.max(0.2, Math.min(1.5, currentPoolSize() / 1000));
 
             // Timing Factor: variable bonus for quick answers
-            let timeWeight = 1;
-            if (currentLimit > 0) {
-                // With limit: linear from 2x (instant) to 1x (timeout)
-                // Use currentLimit instead of settings().timeLimit to account for the multiplier
-                timeWeight = 1 + (timer() / currentLimit);
-            } else {
-                // Without limit (Beginner): bonus for answering under threshold
-                // Linear from 2x (instant) to 1x (threshold or more)
-                const speedBonus = Math.max(0, 1 - (timer() / SCORING.BEGINNER_SPEED_THRESHOLD));
-                timeWeight = 1 + speedBonus;
-            }
+            // Unified logic: linear from 2x (instant) to 1x (limit/threshold)
+            const referenceLimit = currentLimit > 0 ? currentLimit : (SCORING.BEGINNER_SPEED_THRESHOLD * (gameMode() === 'title-to-tune' ? 2 : 1));
+            const speedBonus = Math.max(0, 1 - (timeTaken / referenceLimit));
+            const timeWeight = 1 + speedBonus;
 
             const tryBonus = settings().maxTries > 1 ? (triesLeft() / settings().maxTries) : 1;
 
@@ -328,7 +329,7 @@ export function useGameStore() {
                 correct: true,
                 points: totalRoundScore,
                 bonus: streakBonus,
-                timeTaken: currentLimit > 0 ? (currentLimit - timer()) : timer(),
+                timeTaken: timeTaken,
                 speedBonus: Math.round((timeWeight - 1) * 100),
                 ...currentTune()
             };
@@ -345,7 +346,7 @@ export function useGameStore() {
                 const result = {
                     correct: false,
                     points: 0,
-                    timeTaken: currentLimit > 0 ? (currentLimit - timer()) : timer(),
+                    timeTaken: timeTaken,
                     ...currentTune()
                 };
                 setLastResult(result);
@@ -546,6 +547,7 @@ export function useGameStore() {
         hasSavedData,
         loginWithSavedData,
         skipDataRecovery,
+        initializeAudio,
         isDifficultyUnlocked: (diffId) => isDifficultyUnlocked(diffId, history()),
         getUnlockProgress: (diffId) => getUnlockProgress(diffId, history())
     };
